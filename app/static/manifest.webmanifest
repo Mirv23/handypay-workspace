@@ -1,0 +1,24 @@
+{
+  "id": "/",
+  "name": "HandyPay · Espace d'équipe",
+  "short_name": "HandyPay",
+  "description": "Ventes, relances WhatsApp, tableau du soir et tâches de l'équipe HandyPay.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "/#/ventes",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F5F6F8",
+  "theme_color": "#0E7C66",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "shortcuts": [
+    {"name": "Carte closée", "short_name": "Ventes", "url": "/#/ventes", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png"}]},
+    {"name": "Ma file de relances", "short_name": "Relances", "url": "/#/relances", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png"}]},
+    {"name": "Mode compteur", "short_name": "Compteur", "url": "/compteur", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png"}]}
+  ]
+}

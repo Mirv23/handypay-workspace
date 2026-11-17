@@ -66,13 +66,16 @@ API = "/api/ws"
 APP_NAME = "HandyPay · Espace d'équipe"
 
 # Rien d'extérieur, aucun cadre. Les liens wa.me sont des navigations (nouvel
-# onglet), pas des requêtes de la page : la CSP ne les gêne pas.
+# onglet), pas des requêtes de la page : la CSP ne les gêne pas. Application
+# installable : le manifeste et le service worker viennent du même site (mobile.py).
 WORKSPACE_CSP = (
     "default-src 'self'; "
     "style-src 'self' 'unsafe-inline'; "
     "script-src 'self' 'unsafe-inline'; "
     "img-src 'self' data:; "
     "connect-src 'self'; "
+    "manifest-src 'self'; "
+    "worker-src 'self'; "
     "base-uri 'none'; "
     "form-action 'self'; "
     "frame-ancestors 'none'"
