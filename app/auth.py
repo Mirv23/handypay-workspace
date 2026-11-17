@@ -14,11 +14,18 @@ n'en garde que l'empreinte scrypt. Chacun peut ensuite changer le sien.
 
 Verrouillage : 8 échecs en 15 minutes bloquent l'identifiant 15 minutes (en base
 pour un compte existant ; en mémoire pour un identifiant inconnu, qui reçoit
-exactement les mêmes réponses : on ne devine pas qui a un compte).
+exactement les mêmes réponses : on ne devine pas qui a un compte). Un compte
+existant est AUSSI compté en mémoire, sous son nom d'utilisateur : le compteur
+en base est lu puis réécrit, et des essais lancés en parallèle se marchaient
+dessus (le blocage n'arrivait jamais) ; le compteur en mémoire, lui, est
+atomique, et il est le même que l'on tape le nom ou le numéro.
+Limite par adresse IP (60 échecs) : l'adresse vient de `client_ip`, que le
+client ne peut pas choisir en envoyant son propre X-Forwarded-For.
 """
 
 from __future__ import annotations
 
+import ipaddress
 import logging
 import threading
 import time
@@ -149,6 +156,7 @@ def reset_password(client, username: str) -> str:
         "session_version": int(acc.get("session_version") or 1) + 1,
         "failed_logins": 0, "first_failed_at": None, "locked_until": None,
     }).eq("username", username), "nouveau mot de passe")
+    _mem_clear(_account_key(username), with_lock=True)
     return password
 
 
@@ -231,6 +239,55 @@ def _mem_is_locked(key: str) -> bool:
         return bool(until)
 
 
+def _mem_clear(key: str, with_lock: bool = False) -> None:
+    with _mem_lock:
+        _mem_failures.pop(key, None)
+        if with_lock:
+            _mem_locked.pop(key, None)
+
+
+def _account_key(username: str) -> str:
+    return "acct:" + username
+
+
+def _valid_ip(raw: str) -> str:
+    text = (raw or "").strip()
+    if text.startswith("[") and "]" in text:  # « [2001:db8::1]:443 »
+        text = text[1:text.index("]")]
+    elif text.count(":") == 1:  # « 203.0.113.7:443 »
+        text = text.split(":", 1)[0]
+    try:
+        return str(ipaddress.ip_address(text))
+    except ValueError:
+        return ""
+
+
+def client_ip(request: Request) -> str:
+    """Adresse du client pour la limite par adresse IP, sans la croire sur parole.
+
+    Le Dockerfile lance uvicorn avec `--proxy-headers --forwarded-allow-ips='*'` :
+    `request.client.host` devient alors la PREMIÈRE adresse de X-Forwarded-For,
+    que le client écrit lui-même s'il envoie cet en-tête (le proxy de Render
+    ajoute l'adresse réelle à droite, il n'efface rien). Un attaquant changeait
+    donc d'adresse à chaque essai. On prend, dans l'ordre :
+    - `CF-Connecting-IP` puis `True-Client-IP` : Render passe par Cloudflare,
+      qui pose ces en-têtes lui-même et écrase ce que le client envoie ;
+    - sinon la DERNIÈRE adresse de X-Forwarded-For, ajoutée par le proxy le
+      plus proche (hébergeur à un seul proxy) ;
+    - sinon l'adresse de la connexion (en local, sans proxy).
+    """
+    for name in ("cf-connecting-ip", "true-client-ip"):
+        ip = _valid_ip(request.headers.get(name, ""))
+        if ip:
+            return ip
+    hops = [p for p in ",".join(request.headers.getlist("x-forwarded-for")).split(",") if p.strip()]
+    if hops:
+        ip = _valid_ip(hops[-1])
+        if ip:
+            return ip
+    return request.client.host if request.client else "?"
+
+
 def _record_failure(client, acc: dict) -> None:
     now = _utcnow()
     first = _parse(acc.get("first_failed_at"))
@@ -263,7 +320,7 @@ _BAD = "Identifiant ou mot de passe incorrect."
 @router.post("/api/auth/login")
 def login(body: LoginIn, request: Request, response: Response):
     client = db()
-    ip = "ip:" + (request.client.host if request.client else "?")
+    ip = "ip:" + client_ip(request)
     ident = body.identifier.strip()
     key = "id:" + (security.normalize_phone(ident) if security.looks_like_phone(ident) else ident.lower())
     if _mem_is_locked(ip) or _mem_is_locked(key):
@@ -271,18 +328,21 @@ def login(body: LoginIn, request: Request, response: Response):
     acc = find_account(client, ident, with_hash=True)
     if acc is not None:
         locked = _parse(acc.get("locked_until"))
-        if locked and locked > _utcnow():
+        if (locked and locked > _utcnow()) or _mem_is_locked(_account_key(acc["username"])):
             raise HTTPException(status_code=429, detail=_LOCKED)
     ok = security.verify_password(body.password, (acc or {}).get("password_hash") or "")
     if not ok or acc is None or acc.get("active") is False:
         _mem_failed(ip)
         if acc is not None:
+            # Compteur atomique (essais en parallèle), puis le compteur en base (redémarrage).
+            _mem_failed(_account_key(acc["username"]))
             _record_failure(client, acc)
         else:
             # Même rythme qu'un compte réel : 401 jusqu'au 8e échec, 429 ensuite.
             _mem_failed(key)
         logger.info("Connexion refusée")
         raise HTTPException(status_code=401, detail=_BAD)
+    _mem_clear(_account_key(acc["username"]))
     run(client.table(T_ACCOUNTS).update({
         "failed_logins": 0, "first_failed_at": None, "locked_until": None, "last_login_at": _iso(_utcnow()),
     }).eq("username", acc["username"]), "connexion")

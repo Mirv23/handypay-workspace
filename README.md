@@ -136,7 +136,10 @@ reste éveillée ; une instance gratuite s'endort : l'e-mail du matin part alors
 mêmes variables.
 
 Conseils : une seule instance suffit (le blocage d'un compte est en base ; celui d'un identifiant inconnu et la limite par
-adresse IP sont en mémoire, par instance). HTTPS obligatoire (cookies `Secure`). Lance `create-owner` une fois, depuis ton
+adresse IP sont en mémoire, par instance). L'adresse IP de la limite est lue dans `CF-Connecting-IP` (posé par Cloudflare,
+devant Render, qui écrase la valeur du client), sinon à la fin de `X-Forwarded-For` (ce que le client écrit en tête de cet
+en-tête est ignoré). Chez un hébergeur sans Cloudflare devant, un client peut écrire lui-même `CF-Connecting-IP` : il faut
+alors que le proxy de l'hébergeur retire cet en-tête. HTTPS obligatoire (cookies `Secure`). Lance `create-owner` une fois, depuis ton
 ordinateur avec les variables Supabase, ou depuis le shell de l'hébergeur.
 
 ## Brancher l'agent IA de HandyPay
