@@ -150,7 +150,10 @@ reste éveillée ; une instance gratuite s'endort : l'e-mail du matin part alors
 mêmes variables.
 
 Conseils : une seule instance suffit (le blocage d'un compte est en base ; celui d'un identifiant inconnu et la limite par
-adresse IP sont en mémoire, par instance). HTTPS obligatoire (cookies `Secure`). Lance `create-owner` une fois, depuis ton
+adresse IP sont en mémoire, par instance). L'adresse IP de la limite est lue dans `CF-Connecting-IP` (posé par Cloudflare,
+devant Render, qui écrase la valeur du client), sinon à la fin de `X-Forwarded-For` (ce que le client écrit en tête de cet
+en-tête est ignoré). Chez un hébergeur sans Cloudflare devant, un client peut écrire lui-même `CF-Connecting-IP` : il faut
+alors que le proxy de l'hébergeur retire cet en-tête. HTTPS obligatoire (cookies `Secure`). Lance `create-owner` une fois, depuis ton
 ordinateur avec les variables Supabase, ou depuis le shell de l'hébergeur.
 
 ## Brancher l'agent IA de HandyPay
@@ -252,3 +255,15 @@ le projet, le serveur s'arrête à la fin) :
 $env:PYTHONIOENCODING="utf-8"
 .\.venv\Scripts\python.exe tests\run_verify.py --extra tests\verify_finances.py tests\verify_relances.py tests\verify_mobile.py
 ```
+
+Vérifications de bout en bout, sur une base locale jetable (`tests/verify_securite.py` en dernier : CSRF de chaque route,
+session, verrouillage, droits, injection CSV, fuites, compatibilité PostgREST, schéma SQL) :
+
+```bash
+python tests/run_verify.py --port 8804 --extra tests/verify_finances.py tests/verify_relances.py tests/verify_mobile.py tests/verify_securite.py
+```
+
+Le faux client local (`app/localdb.py`) refuse ce que PostgREST et PostgreSQL refuseraient (colonne inconnue, NULL dans une
+colonne `not null`, type invalide, décalage au-delà du total avec compte exact…) et plafonne une lecture à 1 000 lignes comme
+Supabase. Il n'imite pas tout (contraintes CHECK, longueurs, déclencheurs, droits) : un essai sur une vraie base Supabase reste
+nécessaire avant la mise en ligne.

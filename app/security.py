@@ -123,6 +123,11 @@ def new_csrf_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def new_nonce() -> str:
+    """Nonce CSP d'une page : 128 bits, en hexadécimal (rien à échapper)."""
+    return secrets.token_hex(16)
+
+
 def same_token(a: str, b: str) -> bool:
     if not a or not b or len(a) < 32:
         return False

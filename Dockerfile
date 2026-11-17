@@ -21,5 +21,7 @@ USER espace
 
 ENV PORT=8000
 EXPOSE 8000
-# --proxy-headers : l'adresse IP réelle derrière le proxy de l'hébergeur (verrouillage par IP).
+# --proxy-headers : schéma (https) et adresse du client vus derrière le proxy de l'hébergeur. La limite de
+# connexion par adresse IP ne s'y fie pas (première adresse de X-Forwarded-For, écrite par le client) :
+# elle lit elle-même les en-têtes (app/auth.py, client_ip).
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips='*'"]

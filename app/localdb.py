@@ -17,6 +17,21 @@ PostgREST), `updated_at` tenu à jour, suppressions en cascade ou « set null »
 Une colonne inconnue lève une erreur, comme en production : un oubli dans
 `sql/schema.sql` se voit dès les essais en local.
 
+Et il REFUSE ce que PostgREST / PostgreSQL refuseraient (sinon une requête qui
+passe en local tombe en 503 le jour de la mise en ligne) :
+- une colonne inconnue dans `select`, un filtre, `or_` ou `order` ; un
+  opérateur inconnu dans `or_` ;
+- NULL dans une colonne `not null`, une valeur du mauvais type (uuid, date,
+  horodatage, entier, nombre, booléen, tableau), en écriture comme dans un
+  filtre : types et `not null` sont relus dans `sql/*.sql` ;
+- `upsert(on_conflict=…)` sans contrainte d'unicité sur ces colonnes ;
+- NaN / Infinity (le client `postgrest` ne les envoie pas) ;
+- `update` / `delete` sans filtre (Supabase les refuse) ;
+- un décalage au-delà du total quand le compte exact est demandé (416).
+Il imite aussi le plafond de Supabase : 1 000 lignes au plus par lecture, et
+une insertion de plusieurs lignes met NULL (pas la valeur par défaut) dans une
+colonne qu'une ligne omet et qu'une autre donne.
+
 Une table = un fichier JSON. Chaque opération prend un verrou (fil d'exécution
 et fichier) : le serveur et `manage.py` peuvent tourner en même temps.
 """
@@ -196,6 +211,93 @@ for _child, _spec in SCHEMA.items():
     for _col, _parent, _pcol, _action in _spec["fks"]:
         _CHILDREN.setdefault(_parent, []).append((_child, _col, _pcol, _action))
 
+# Plafond de lignes d'une lecture (Supabase : « Max rows », 1 000 par défaut).
+MAX_ROWS = 1000
+SQL_DIR = Path(__file__).resolve().parent.parent / "sql"
+SQL_FILES = ("schema.sql", "relances_v2.sql", "finances.sql")
+_SQL_TYPE_RE = r"(text\[\]|uuid\[\]|text|uuid|date|timestamptz|integer|bigint|numeric(?:\(\d+,\s*\d+\))?|boolean|jsonb|double precision)"
+
+
+def read_sql_columns(sql_dir: Path = SQL_DIR) -> dict[str, dict[str, dict]]:
+    """Colonnes déclarées dans sql/*.sql : {table: {colonne: {"type", "not_null"}}}.
+
+    Lecture volontairement simple, calée sur la mise en forme de ces fichiers
+    (une colonne par ligne). Fichiers absents : {} (rien n'est vérifié).
+    """
+    tables: dict[str, dict[str, dict]] = {}
+
+    def add(table: str, col: str, typ: str, rest: str) -> None:
+        rest = rest.lower()
+        tables.setdefault(table, {})[col] = {
+            "type": re.sub(r"\(.*\)", "", typ),
+            "not_null": "not null" in rest or "primary key" in rest,
+        }
+
+    for name in SQL_FILES:
+        try:
+            text = (sql_dir / name).read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for m in re.finditer(r"create table if not exists public\.(\w+)\s*\((.*?)\n\);", text, re.S):
+            for line in m.group(2).splitlines():
+                c = re.match(r"\s+(\w+)\s+" + _SQL_TYPE_RE + r"(.*)$", line)
+                if c and c.group(1) not in ("check", "unique", "primary", "foreign", "constraint"):
+                    add(m.group(1), c.group(1), c.group(2), c.group(3))
+        for m in re.finditer(r"alter table public\.(\w+)\s+add column if not exists (\w+)\s+" + _SQL_TYPE_RE + r"([^;]*);", text):
+            add(m.group(1), m.group(2), m.group(3), m.group(4))
+    return tables
+
+
+_SQL_COLUMNS = read_sql_columns()
+_UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$")
+_TSTZ_RE = re.compile(r"^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?)?(?:Z|[+-]\d{2}(?::?\d{2})?)?$")
+_INT_RE = re.compile(r"^[+-]?\d+$")
+_NUM_RE = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$")
+
+
+def _valid_scalar(typ: str, value: Any) -> bool:
+    """La valeur passerait-elle la conversion de PostgreSQL vers ce type ?"""
+    if typ == "jsonb":
+        return True
+    if isinstance(value, (list, dict)):
+        return False
+    if typ == "text":
+        return True
+    if typ == "boolean":
+        return isinstance(value, bool) or str(value).lower() in ("true", "false", "t", "f")
+    if isinstance(value, bool):
+        return False
+    text = str(value).strip()
+    if typ == "uuid":
+        return bool(_UUID_RE.match(text))
+    if typ in ("date", "timestamptz"):
+        # Une date seule vaut minuit ; un horodatage dans une colonne date garde le jour.
+        if not _TSTZ_RE.match(text):
+            return False
+        try:
+            date.fromisoformat(text[:10])
+        except ValueError:
+            return False
+        return True
+    if typ in ("integer", "bigint"):
+        return isinstance(value, int) or (isinstance(value, str) and bool(_INT_RE.match(text)))
+    if typ in ("numeric", "double precision"):
+        return isinstance(value, (int, float)) or bool(_NUM_RE.match(text))
+    return True
+
+
+def _check_value(table: str, col: str, value: Any, where: str) -> None:
+    spec = _SQL_COLUMNS.get(table, {}).get(col)
+    if spec is None or value is None:
+        return
+    typ = spec["type"]
+    if typ.endswith("[]"):
+        ok = isinstance(value, list) and all(v is None or _valid_scalar(typ[:-2], v) for v in value)
+    else:
+        ok = _valid_scalar(typ, value)
+    if not ok:
+        raise LocalAPIError(f'invalid input syntax for type {typ} ({where} « {table}.{col} ») : {str(value)[:40]!r}')
+
 
 def _jsonable(value: Any) -> Any:
     if isinstance(value, datetime):
@@ -312,10 +414,15 @@ def _parse_or(expr: str) -> list[tuple[bool, str, str, Any]]:
             col, op, value = bits
         else:
             raise LocalAPIError(f"filtre or invalide : {part[:40]}")
+        if op not in _OPS:
+            raise LocalAPIError(f"filtre or : opérateur inconnu « {op} » (PGRST100)")
         if op == "in":
             value = [v.strip().strip('"') for v in value.strip("()").split(",") if v.strip()]
         out.append((neg, col, op, value))
     return out
+
+
+_OPS = ("eq", "neq", "gt", "gte", "lt", "lte", "in", "is", "like", "ilike")
 
 
 class Result:
@@ -356,28 +463,52 @@ class Query:
         self._negate = False
 
     # ── opérations ──────────────────────────────────────────────
+    def _known(self, col: str) -> str:
+        if col not in SCHEMA[self._table]["columns"]:
+            raise LocalAPIError(f"column {self._table}.{col} does not exist (42703)")
+        return col
+
     def select(self, *columns: str, count: Optional[str] = None, **_kw) -> "Query":
         cols = ",".join(columns or ("*",))
         names = [c.strip() for c in cols.split(",") if c.strip()]
-        self._columns = None if "*" in names else names
+        self._columns = None if "*" in names else [self._known(c) for c in names]
         self._count = str(count).split(".")[-1].lower() if count else None
         return self
 
+    @staticmethod
+    def _rows(json_: Any) -> list[dict]:
+        """Lignes à écrire, comme les envoie le client `postgrest`.
+
+        NaN et Infinity sont refusés (le client lève une erreur avant l'envoi).
+        Plusieurs lignes : le client ajoute `?columns=` (toutes les clés vues) et
+        PostgREST met NULL, pas la valeur par défaut, dans une colonne qu'une
+        ligne omet.
+        """
+        rows = [_jsonable(r) for r in (json_ if isinstance(json_, list) else [json_])]
+        json.dumps(rows, allow_nan=False)
+        if isinstance(json_, list) and len(rows) > 1:
+            keys = {k for r in rows for k in r}
+            rows = [{k: r.get(k) for k in keys} for r in rows]
+        return rows
+
     def insert(self, json_: Any, **_kw) -> "Query":
         self._op = "insert"
-        self._payload = [_jsonable(r) for r in (json_ if isinstance(json_, list) else [json_])]
+        self._payload = self._rows(json_)
         return self
 
     def update(self, json_: dict, **_kw) -> "Query":
         self._op = "update"
-        self._payload = [_jsonable(json_)]
+        self._payload = self._rows(json_)
         return self
 
     def upsert(self, json_: Any, on_conflict: str = "", ignore_duplicates: bool = False, **_kw) -> "Query":
         self._op = "upsert"
-        self._payload = [_jsonable(r) for r in (json_ if isinstance(json_, list) else [json_])]
+        self._payload = self._rows(json_)
         self._on_conflict = tuple(c.strip() for c in on_conflict.split(",") if c.strip())
         self._ignore_duplicates = ignore_duplicates
+        spec = SCHEMA[self._table]
+        if self._on_conflict and set(self._on_conflict) not in [set(k) for k in [spec["pk"]] + spec["unique"]]:
+            raise LocalAPIError("there is no unique or exclusion constraint matching the ON CONFLICT specification (42P10)")
         return self
 
     def delete(self, **_kw) -> "Query":
@@ -390,9 +521,21 @@ class Query:
         return _Not(self)
 
     def _add(self, col: str, op: str, value: Any) -> "Query":
+        self._check_filter(col, op, value)
         self._filters.append((self._negate, col, op, _jsonable(value)))
         self._negate = False
         return self
+
+    def _check_filter(self, col: str, op: str, value: Any) -> None:
+        """Colonne connue et valeur convertible vers son type (sinon PostgREST répond 400)."""
+        self._known(col)
+        if op in ("is", "like", "ilike"):
+            return
+        values = value if op == "in" else [value]
+        for v in values:
+            if v is not None and not isinstance(v, bool):
+                v = str(v)  # le client envoie tout sous forme de texte
+            _check_value(self._table, col, v, "filtre sur")
 
     def eq(self, col, value):
         return self._add(col, "eq", value)
@@ -425,11 +568,14 @@ class Query:
         return self._add(col, "is", value if value is not None else "null")
 
     def or_(self, expr: str, **_kw) -> "Query":
-        self._filters.append(("or", _parse_or(expr)))
+        parsed = _parse_or(expr)
+        for _neg, col, op, value in parsed:
+            self._check_filter(col, op, value)
+        self._filters.append(("or", parsed))
         return self
 
     def order(self, col: str, desc: bool = False, **_kw) -> "Query":
-        self._orders.append((col, bool(desc)))
+        self._orders.append((self._known(col), bool(desc)))
         return self
 
     def limit(self, n: int, **_kw) -> "Query":
@@ -480,6 +626,14 @@ class Query:
         if unknown:
             raise LocalAPIError(f"Could not find the '{unknown[0]}' column of '{self._table}' in the schema cache")
 
+    def _check_row(self, row: dict, given: dict) -> None:
+        """Types des valeurs écrites, et NOT NULL (colonnes de sql/*.sql)."""
+        for col, value in given.items():
+            _check_value(self._table, col, value, "écriture dans")
+        for col, spec in _SQL_COLUMNS.get(self._table, {}).items():
+            if spec["not_null"] and col in row and row[col] is None:
+                raise LocalAPIError(f'null value in column "{col}" of relation "{self._table}" violates not-null constraint (23502)')
+
     def _do_select(self) -> Result:
         rows = [r for r in self._store.rows(self._table) if self._matches(r)]
         for col, desc in reversed(self._orders):
@@ -489,9 +643,11 @@ class Query:
             # PostgreSQL : NULL en dernier en ordre croissant, en premier en décroissant.
             rows = missing + present if desc else present + missing
         total = len(rows)
+        if self._count and self._offset > total:
+            # PostgREST : compte exact demandé et décalage au-delà du total → 416.
+            raise LocalAPIError(f"Requested range not satisfiable : offset {self._offset}, {total} lignes (PGRST103)")
         rows = rows[self._offset:]
-        if self._limit is not None:
-            rows = rows[: self._limit]
+        rows = rows[: MAX_ROWS if self._limit is None else min(self._limit, MAX_ROWS)]
         return Result([self._project(r) for r in rows], total if self._count else None)
 
     def _do_insert(self) -> Result:
@@ -511,6 +667,7 @@ class Query:
             for col in spec["identity"]:
                 if col in given and isinstance(given[col], int):
                     self._store.bump_id(self._table, col, given[col])
+            self._check_row(row, given)
             self._check_unique(row, rows + new)
             new.append(row)
         rows.extend(new)
@@ -533,10 +690,17 @@ class Query:
                         f'duplicate key value violates unique constraint "{self._table}_{"_".join(key)}_key"'
                     )
 
+    def _require_filter(self) -> None:
+        # Supabase (pg-safeupdate) : « UPDATE/DELETE requires a WHERE clause ».
+        if not self._filters:
+            raise LocalAPIError(f"{self._op.upper()} requires a WHERE clause (21000)")
+
     def _do_update(self) -> Result:
         spec = SCHEMA[self._table]
         changes = self._payload[0]
         self._check_columns(changes)
+        self._require_filter()
+        self._check_row(changes, changes)
         rows = self._store.rows(self._table)
         out = []
         for row in rows:
@@ -569,6 +733,7 @@ class Query:
             if existing is not None:
                 if self._ignore_duplicates:
                     continue
+                self._check_row(given, given)
                 existing.update(copy.deepcopy(given))
                 if spec["touch"] and "updated_at" not in given:
                     existing["updated_at"] = _now()
@@ -581,6 +746,7 @@ class Query:
         return Result(out)
 
     def _do_delete(self) -> Result:
+        self._require_filter()
         rows = self._store.rows(self._table)
         gone = [r for r in rows if self._matches(r)]
         if not gone:

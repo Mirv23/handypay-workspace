@@ -68,10 +68,14 @@ APP_NAME = "HandyPay · Espace d'équipe"
 # Rien d'extérieur, aucun cadre. Les liens wa.me sont des navigations (nouvel
 # onglet), pas des requêtes de la page : la CSP ne les gêne pas. Application
 # installable : le manifeste et le service worker viennent du même site (mobile.py).
+# Scripts : pas de 'unsafe-inline'. Seuls les <script> de la page, marqués du
+# nonce tiré pour CETTE réponse, s'exécutent : un script ou un attribut
+# `onerror=` injecté dans la page serait bloqué par le navigateur. Les styles
+# gardent 'unsafe-inline' (attributs style= partout dans la page).
 WORKSPACE_CSP = (
     "default-src 'self'; "
     "style-src 'self' 'unsafe-inline'; "
-    "script-src 'self' 'unsafe-inline'; "
+    "script-src 'self'{nonce}; "
     "img-src 'self' data:; "
     "connect-src 'self'; "
     "manifest-src 'self'; "
@@ -80,6 +84,18 @@ WORKSPACE_CSP = (
     "form-action 'self'; "
     "frame-ancestors 'none'"
 )
+
+
+def page_csp(nonce: str = "") -> str:
+    """CSP d'une page HTML (« / », « /compteur ») ; sans nonce, aucun script en ligne ne s'exécute."""
+    return WORKSPACE_CSP.replace("{nonce}", f" 'nonce-{nonce}'" if nonce else "")
+
+
+def page_nonce(request: Request) -> str:
+    """Nonce CSP de cette réponse : le gardien (main.py) le relit pour écrire l'en-tête."""
+    nonce = security.new_nonce()
+    request.state.csp_nonce = nonce
+    return nonce
 
 T_ACCOUNTS = auth.T_ACCOUNTS
 T_MEMBERS = "workspace_members"
@@ -720,7 +736,7 @@ def _spawn_next(client, task: dict, actor: str) -> Optional[dict]:
 @router.get(PAGE_PATH, include_in_schema=False)
 def workspace_page(request: Request):
     """Coquille HTML : aucune donnée, tout passe ensuite par l'API et la session."""
-    response = _templates.TemplateResponse(request, "index.html", {"app_name": APP_NAME})
+    response = _templates.TemplateResponse(request, "index.html", {"app_name": APP_NAME, "csp_nonce": page_nonce(request)})
     if not request.cookies.get(security.CSRF_COOKIE):
         auth.set_csrf_cookie(response)
     return response
@@ -800,16 +816,20 @@ def list_tasks(
     me = _me(request, client)
     server_time = _now()
     visible = {p["id"] for p in _visible_projects(client, me)}
-    query = client.table(T_TASKS).select("*")
     if since:
         try:
             datetime.fromisoformat(since.replace("Z", "+00:00"))
         except ValueError:
             raise HTTPException(status_code=400, detail="Paramètre since invalide.")
-        query = query.gt("updated_at", since)
-    else:
-        query = query.eq("archived", archived)
-    rows = _run(query.limit(_TASK_LIMIT), "lecture des tâches")
+
+    def build():
+        query = client.table(T_TASKS).select("*")
+        query = query.gt("updated_at", since) if since else query.eq("archived", archived)
+        return query.order("id")
+
+    # Page par page : Supabase ne rend jamais plus de 1 000 lignes d'un coup,
+    # même avec .limit(5000) ; au-delà, des tâches manquaient sans le dire.
+    rows = dbmod.fetch_all(build, "lecture des tâches", cap=_TASK_LIMIT)
     horizon = (datetime.now(timezone.utc) - timedelta(days=_DONE_HORIZON_DAYS)).isoformat()
     tasks = []
     for r in rows:
@@ -1536,6 +1556,7 @@ def update_objective(objective_id: str, body: ObjectiveIn, request: Request):
 def delete_objective(objective_id: str, request: Request):
     client = _db()
     me = _me(request, client)
+    _require(me, "membre")  # un observateur n'écrit rien, même désigné responsable de l'objectif
     current = _objective_or_404(client, objective_id)
     if me.role != "responsable" and me.username not in (current.get("owner_username"), current.get("created_by")):
         raise HTTPException(status_code=403, detail="Seul son responsable ou un responsable de l'espace supprime un objectif.")
@@ -1785,11 +1806,13 @@ def update_doc(doc_id: str, body: DocIn, request: Request):
 def delete_doc(doc_id: str, request: Request):
     client = _db()
     me = _me(request, client)
+    _require(me, "membre")  # un auteur repassé observateur ne supprime plus rien
     current = _doc_or_404(client, me, doc_id)
     if current.get("author") != me.username and me.role != "responsable":
         raise HTTPException(status_code=403, detail="Seul son auteur ou un responsable supprime un document.")
     _run(client.table(T_DOCS).delete().eq("id", str(current["id"])), "suppression du document")
-    _log(client, me.username, "doc_deleted", detail={"title": current.get("title")})
+    # Avec son projet : le fil d'activité (lisible des observateurs) filtre les projets restreints.
+    _log(client, me.username, "doc_deleted", project_id=_id_or_none(current.get("project_id")), detail={"title": current.get("title")})
     return {"ok": True}
 
 
@@ -1866,7 +1889,8 @@ def export_csv(request: Request, archived: bool = False):
     me = _me(request, client)
     projects = {p["id"]: p for p in _visible_projects(client, me)}
     cycles = {str(r.get("id")): r.get("name") for r in _run(client.table(T_CYCLES).select("id,name").limit(300), "lecture des cycles")}
-    rows = _run(client.table(T_TASKS).select("*").eq("archived", archived).limit(_TASK_LIMIT), "lecture des tâches")
+    rows = dbmod.fetch_all(lambda: client.table(T_TASKS).select("*").eq("archived", archived).order("number").order("id"),
+                           "lecture des tâches", cap=_TASK_LIMIT)
     out = io.StringIO()
     writer = csv.writer(out, delimiter=";")
     writer.writerow(["Numéro", "Projet", "Titre", "Statut", "Priorité", "Responsable", "Début", "Échéance",

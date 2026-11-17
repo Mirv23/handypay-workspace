@@ -14,7 +14,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-<script>/* Thème choisi appliqué avant le premier rendu : pas d'éclair clair en mode sombre. */
+<script nonce="{{ csp_nonce }}">/* Thème choisi appliqué avant le premier rendu : pas d'éclair clair en mode sombre. */
 try{var t=localStorage.getItem("ws_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <!-- ==== FIN MOBILE ==== -->
 <style>
@@ -883,7 +883,7 @@ a.nav-i{text-decoration:none}
 <div id="notifs" class="card" hidden></div>
 <div id="toast" aria-live="polite"></div>
 
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 /* HandyPay · Espace d'équipe — page unique. Toutes les données passent par
    /api/ws/* derrière la session de l'espace ; aucun secret ici.
@@ -1097,7 +1097,9 @@ $("#login-form").addEventListener("submit",async e=>{
   try{await api("POST","/api/auth/login",body);$("#lg-pass").value="";await boot()}
   catch(err){$("#lg-err").textContent=err.message}
 });
-async function logout(){try{await api("POST","/api/auth/logout")}catch(e){}stopPolling();S.tasks.clear();S.fo.items=[];S.tplMsg=null;showLogin()}
+async function logout(){try{await api("POST","/api/auth/logout")}catch(e){}stopPolling();S.tasks.clear();S.fo.items=[];S.tplMsg=null;showLogin();
+  /* Téléphone partagé : rien de la session précédente (vues, fiches, finances, membres) ne reste dans la page ni en mémoire. */
+  location.reload()}
 $("#logout-btn").onclick=logout;$("#blocked-out").onclick=logout;
 
 /* ── démarrage ──────────────────────────────────────────────── */

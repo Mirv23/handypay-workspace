@@ -44,6 +44,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app import timeutil
 from app import workspace as ws
 from app.config import get_settings
+from app.db import fetch_all
 
 logger = logging.getLogger("handypay.digest")
 router = APIRouter()
@@ -342,10 +343,11 @@ def _extras(client, team: list[dict], today: date) -> dict:
     stats = sales.compute_stats(client, yesterday, team=team)
     sold = {p["username"]: p["cards"] for p in stats["today"]["by_person"] if p["username"]}
     iso = today.isoformat()
-    rows = ws._run(
-        client.table(followups.T_FOLLOWUPS).select("assignee,status,next_followup")
+    # Page par page : la file dépasse vite 1 000 fiches, le plafond d'une lecture Supabase.
+    rows = fetch_all(
+        lambda: client.table(followups.T_FOLLOWUPS).select("assignee,status,next_followup")
         .not_.is_("assignee", "null").not_.in_("status", list(followups.CLOSED))
-        .or_(followups.due_filter(iso)).limit(1000),
+        .or_(followups.due_filter(iso)).order("id"),
         "lecture des relances",
     )
     queue: dict[str, tuple[int, int]] = {}
@@ -361,7 +363,8 @@ def _load(client):
     team = ws._team(client, with_email=True)
     members = [dict(m) for m in team]
     projects = {p["id"]: p for p in ws._all_projects(client) if p.get("status") != "archive"}
-    tasks = [ws._task_out(r) for r in ws._run(client.table(ws.T_TASKS).select("*").eq("archived", False).limit(ws._TASK_LIMIT), "lecture des tâches")]
+    tasks = [ws._task_out(r) for r in fetch_all(lambda: client.table(ws.T_TASKS).select("*").eq("archived", False).order("id"),
+                                                "lecture des tâches", cap=ws._TASK_LIMIT)]
     return members, team, projects, tasks
 
 

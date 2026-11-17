@@ -40,7 +40,9 @@ aucune donnée de l'espace. Elles sont hors de `/api/`, donc le gardien de `main
 ### En-têtes et CSP
 
 - Page `/` et `/compteur` : la CSP de la page gagne `manifest-src 'self'` et `worker-src 'self'` (déjà couverts par
-  `default-src 'self'` : rien n'est ouvert, c'est seulement explicite).
+  `default-src 'self'` : rien n'est ouvert, c'est seulement explicite). Scripts : `script-src 'self' 'nonce-…'`, sans
+  `'unsafe-inline'` ; le nonce est tiré pour chaque réponse et posé sur les `<script>` de la page (un script ou un
+  attribut `on…=` injecté ne s'exécuterait pas).
 - `/sw.js` : `default-src 'none'; connect-src 'self'` (la CSP d'un service worker s'applique à ses propres requêtes ; il
   ne relit que la coquille, sur le même site).
 - Manifeste et icônes : la CSP de l'API (`default-src 'none'`), comme tout le reste ; cache public (1 h et 24 h).

@@ -212,6 +212,12 @@ def _actor(team: list[dict], login: str, by_ai: bool) -> str:
 
 def _move(client, team: list[dict], actor: str, row: dict, status: str) -> None:
     """Change le statut comme le ferait une personne : historique et notifications compris."""
+    if status == "fait" and ws.DECISION_LABEL in ws._strs(row.get("labels")):
+        # Une décision ne se ferme jamais toute seule : seule la personne qui tranche la valide, dans
+        # l'espace. (Le rôle « responsable » prêté à GitHub ci-dessous la laissait fermer une décision
+        # sans personne désignée, ou celle de l'auteur du commit.)
+        logger.info("Décision HP-%s : GitHub ne la ferme pas", row.get("number"))
+        return
     me = ws.Me(actor, "responsable", "github")
     try:
         ws._apply_patch(client, me, team, str(row["id"]), {"status": status})

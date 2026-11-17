@@ -116,4 +116,5 @@ def counter_page(request: Request):
         initial = counter_payload(ws._db())
     except Exception:  # noqa: BLE001 - la page charge quand même, puis réessaie
         initial = None
-    return _templates.TemplateResponse(request, "compteur.html", {"app_name": ws.APP_NAME, "initial": initial})
+    return _templates.TemplateResponse(request, "compteur.html",
+                                       {"app_name": ws.APP_NAME, "initial": initial, "csp_nonce": ws.page_nonce(request)})

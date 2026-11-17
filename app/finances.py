@@ -396,8 +396,10 @@ def _expense_out(r: dict, approvals: list[dict], me: Optional[ws.Me] = None) -> 
 def _approvals_for(client, ids: list[str]) -> list[dict]:
     out: list[dict] = []
     for i in range(0, len(ids), 150):
-        out += ws._run(client.table(T_APPROVALS).select("expense_id,username,created_at").in_("expense_id", ids[i:i + 150]).limit(5000),
-                       "lecture des accords")
+        chunk = ids[i:i + 150]
+        # Page par page : Supabase rend 1 000 lignes au plus par lecture.
+        out += fetch_all(lambda: client.table(T_APPROVALS).select("expense_id,username,created_at").in_("expense_id", chunk).order("id"),
+                         "lecture des accords")
     return out
 
 
@@ -798,7 +800,7 @@ def export_statement(request: Request, mois: str = Query("", max_length=7)):
 class ExpenseIn(BaseModel):
     day: date
     category: str = Field(min_length=1, max_length=40)
-    amount: float = Field(gt=0, le=1_000_000)
+    amount: float = Field(ge=0.01, le=1_000_000)
     paid_by: str = Field(default=COMPANY, max_length=40)
     note: str = Field(default="", max_length=500)
 
@@ -932,14 +934,14 @@ class PayoutIn(BaseModel):
     month: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
     kind: Literal["salaire", "prime"] = "salaire"
     day: date
-    amount: float = Field(gt=0, le=1_000_000)
+    amount: float = Field(ge=0.01, le=1_000_000)
     method: Method
     note: str = Field(default="", max_length=300)
 
 
 class DebtPaymentIn(BaseModel):
     day: date
-    amount: float = Field(gt=0, le=10_000_000)
+    amount: float = Field(ge=0.01, le=10_000_000)
     method: Method = "especes"
     note: str = Field(default="", max_length=300)
 
@@ -947,7 +949,7 @@ class DebtPaymentIn(BaseModel):
 class IncomeIn(BaseModel):
     day: date
     label: str = Field(min_length=1, max_length=80)
-    amount: float = Field(gt=0, le=10_000_000)
+    amount: float = Field(ge=0.01, le=10_000_000)
     note: str = Field(default="", max_length=300)
 
 
