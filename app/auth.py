@@ -282,9 +282,9 @@ def client_ip(request: Request) -> str:
             return ip
     hops = [p for p in ",".join(request.headers.getlist("x-forwarded-for")).split(",") if p.strip()]
     if hops:
-        ip = _valid_ip(hops[-1])
-        if ip:
-            return ip
+        # Illisible : une clé commune, jamais le texte du client (uvicorn l'a déjà
+        # recopié dans request.client.host).
+        return _valid_ip(hops[-1]) or "?"
     return request.client.host if request.client else "?"
 
 
