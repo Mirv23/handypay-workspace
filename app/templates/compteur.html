@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#FFFFFF" id="c-theme-color">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HandyPay">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<title>Compteur · HandyPay</title>
+<script>try{var t=localStorage.getItem("ws_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+/* Mode compteur : la page que l'on filme chaque matin (vidéo verticale 9:16).
+   Contraste fort, chiffres très grands, lisibles de loin ; aucun nom, aucun numéro. */
+:root{
+  --bg:#FFFFFF; --ink:#04120C; --muted:#3F5149; --soft:#EDF6F1; --card:#F5FAF7; --line:#D9E8E1;
+  --accent:#0E7C66; --accent-2:#12B76A; --on-accent:#FFFFFF; --glow:rgba(18,183,106,.13); --warn:#B54708;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#040908; --ink:#FFFFFF; --muted:#A5BDB2; --soft:#0F1F1A; --card:#0A1512; --line:#1C312A;
+    --accent:#3DDC97; --accent-2:#12B76A; --on-accent:#03140D; --glow:rgba(61,220,151,.16); --warn:#FDB022;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#040908; --ink:#FFFFFF; --muted:#A5BDB2; --soft:#0F1F1A; --card:#0A1512; --line:#1C312A;
+  --accent:#3DDC97; --accent-2:#12B76A; --on-accent:#03140D; --glow:rgba(61,220,151,.16); --warn:#FDB022;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{min-height:100vh;min-height:100dvh;background:radial-gradient(110% 48% at 50% 30%,var(--glow),transparent 72%),var(--bg);color:var(--ink);
+  font-family:"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+[hidden]{display:none!important}
+.sr{position:absolute;top:0;left:0;margin:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.stage{min-height:100vh;min-height:100dvh;max-width:560px;margin:0 auto;display:flex;flex-direction:column;
+  padding:max(14px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+
+/* Haut : la marque et le jour de la campagne */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.2px}
+.mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#12B76A,#0E7C66);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+.pill{border-radius:999px;padding:8px 15px;background:var(--soft);border:1px solid var(--line);font-weight:700;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill b{font-weight:900}
+
+/* Le cumul, en très grand */
+.hero{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;text-align:center;padding:18px 0 10px}
+.eyebrow{font-size:15px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);transition:opacity .25s ease}
+.hero.bumping .eyebrow{opacity:0}
+.num-wrap{position:relative;align-self:center;margin-top:6px}
+.big{font-size:min(34vw,19vh,240px);line-height:1;font-weight:900;letter-spacing:-.045em;font-variant-numeric:tabular-nums;white-space:nowrap;
+  transition:color .5s ease}
+.big.hot{color:var(--accent)}
+.big.pop{animation:pop .75s cubic-bezier(.2,.8,.2,1)}
+.bump{position:absolute;left:50%;top:-36px;translate:-50% 0;padding:5px 14px;border-radius:999px;background:var(--accent);color:var(--on-accent);
+  font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;opacity:0;pointer-events:none;white-space:nowrap}
+.bump.go{animation:bump 2.4s ease-out forwards}
+.sub{font-size:min(5.6vw,24px);font-weight:650;color:var(--muted);margin-top:4px}
+.sub b{color:var(--ink);font-weight:800}
+.track{position:relative;height:18px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:24px}
+.track>i{position:absolute;inset:0 auto 0 0;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--accent-2),var(--accent));
+  transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.tick{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--bg);opacity:.85}
+.scale{position:relative;height:20px;margin-top:7px;font-size:13px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.scale span{position:absolute;top:0;translate:-50% 0;white-space:nowrap}
+.scale span.ok{color:var(--accent)}
+.scale span:first-child{translate:0 0}
+.scale span:last-child{translate:-100% 0}
+
+/* Aujourd'hui et prochain jalon */
+.cards{display:grid;gap:12px;margin-top:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:16px 20px}
+.label{font-size:13px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--muted)}
+.today{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:2px}
+.today .n{font-size:min(16vw,9vh,72px);font-weight:900;line-height:1.05;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.today .of{font-size:min(7vw,30px);font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.today .l{font-size:min(5.2vw,22px);font-weight:650;color:var(--muted)}
+.track.sm{height:10px;margin-top:12px}
+.ms{font-size:min(6vw,26px);font-weight:850;margin-top:4px;line-height:1.25}
+.ms-sub{font-size:min(4.4vw,18px);color:var(--muted);margin-top:4px}
+.margin-v{font-size:min(7vw,30px);font-weight:900;margin-top:2px;font-variant-numeric:tabular-nums}
+
+/* Commandes */
+.controls{display:grid;gap:8px;padding-top:18px}
+.refresh{display:flex;align-items:center;justify-content:center;gap:10px;min-height:60px;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent);
+  font:inherit;font-size:20px;font-weight:800;cursor:pointer;box-shadow:0 8px 24px -10px var(--accent)}
+.refresh:active{transform:scale(.98)}
+.refresh:disabled{cursor:progress}
+.refresh.spin svg{animation:spin .8s linear infinite}
+.status{text-align:center;font-size:14px;color:var(--muted);min-height:21px}
+.status.warn{color:var(--warn);font-weight:700}
+.tools{display:flex;justify-content:center;gap:2px;flex-wrap:wrap}
+.tool{min-height:44px;min-width:44px;padding:0 12px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:650;
+  border-radius:999px;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;cursor:pointer}
+.tool:hover{background:var(--soft)}
+.tool[aria-pressed="true"]{color:var(--accent);background:var(--soft)}
+svg.i{flex:none;display:block}
+
+/* Session terminée */
+.veil{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(6px);z-index:10}
+.veil .card{max-width:360px;text-align:center}
+.veil a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;margin-top:14px;padding:0 22px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:800;text-decoration:none}
+
+@keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.07)}100%{transform:scale(1)}}
+@keyframes bump{0%{opacity:0;transform:translateY(12px) scale(.8)}14%{opacity:1;transform:translateY(0) scale(1)}78%{opacity:1;transform:translateY(-2px)}100%{opacity:0;transform:translateY(-12px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (min-width:700px){.stage{padding-top:28px;padding-bottom:28px}}
+/* Petits écrans (iPhone SE, 640 px de haut) : tout tient sans défiler. */
+@media (max-height:700px){
+  .top{min-height:40px}.mark{width:32px;height:32px}
+  .hero{padding:6px 0 2px}.big{font-size:min(32vw,16vh)}.track{margin-top:14px}.scale{margin-top:5px}
+  .cards{gap:8px;margin-top:6px}.card{padding:10px 16px;border-radius:18px}.today .n{font-size:min(14vw,8vh)}.track.sm{margin-top:8px}
+  .ms{font-size:min(5.4vw,22px)}.ms-sub{font-size:15px}
+  .controls{padding-top:10px;gap:4px}.refresh{min-height:52px}.tool{min-height:44px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="stage">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true">H</span>HandyPay</div>
+    <div class="pill" id="c-day">Jour <b>–</b> / –</div>
+  </header>
+
+  <section class="hero" aria-label="Cumul de la campagne">
+    <div class="eyebrow">Défi <span id="c-goal">3 000</span> cartes</div>
+    <div class="num-wrap"><span class="bump" id="c-bump" aria-hidden="true"></span><div class="big" id="c-cumul">–</div></div>
+    <div class="sub">cartes vendues · <b id="c-pct">–</b></div>
+    <div class="track" aria-hidden="true"><i id="c-bar"></i><span id="c-ticks"></span></div>
+    <div class="scale" id="c-scale" aria-hidden="true"></div>
+  </section>
+
+  <section class="cards">
+    <div class="card" aria-label="Aujourd'hui">
+      <div class="today"><span class="n" id="c-today">–</span><span class="of">/ <span id="c-today-target">100</span></span><span class="l">aujourd'hui</span></div>
+      <div class="track sm" aria-hidden="true"><i id="c-today-bar"></i></div>
+    </div>
+    <div class="card" id="c-next-card">
+      <div class="label">Prochain jalon</div>
+      <div class="ms" id="c-ms">–</div>
+      <div class="ms-sub" id="c-ms-sub">&nbsp;</div>
+    </div>
+    <div class="card" id="c-margin" hidden>
+      <div class="label">Marge</div>
+      <div class="margin-v" id="c-margin-v">–</div>
+      <div class="ms-sub" id="c-margin-sub">&nbsp;</div>
+    </div>
+  </section>
+
+  <footer class="controls">
+    <button class="refresh" id="c-refresh" type="button"><svg class="i" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.6-4.5M4 13a8 8 0 0 0 14.6 4.5"/><path d="M4 3.5v4h4M20 20.5v-4h-4"/></svg>Rafraîchir</button>
+    <div class="status" id="c-status" role="status">&nbsp;</div>
+    <div class="tools">
+      <a class="tool" href="/#/ventes"><svg class="i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Espace</a>
+      <button class="tool" id="c-margin-btn" type="button" aria-pressed="false"><svg class="i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>Marge</button>
+      <button class="tool" id="c-theme" type="button"><svg class="i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span id="c-theme-l">Auto</span></button>
+      <button class="tool" id="c-fs" type="button" title="Plein écran" aria-label="Plein écran" hidden><svg class="i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+  </footer>
+</main>
+<div class="veil" id="c-veil" hidden><div class="card"><div class="label">Session terminée</div><p>Reconnecte-toi pour revoir le compteur.</p><a href="/#/compteur">Se reconnecter</a></div></div>
+<p class="sr" id="c-live" aria-live="polite"></p>
+
+<script id="c-init" type="application/json">{{ initial|tojson }}</script>
+<script>
+"use strict";
+/* Compteur : GET /api/ws/compteur (session, lecture seule, aucune donnée personnelle). */
+const $ = (id) => document.getElementById(id);
+const root = document.documentElement;
+const TZ = "America/Port-au-Prince";
+const MOIS = ["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+const JOURS = ["dim.","lun.","mar.","mer.","jeu.","ven.","sam."];
+const nf = new Intl.NumberFormat("fr-FR");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const S = {data: null, cumul: null, today: null, busy: false, lastOk: 0, timer: null, wake: null, anim: {}};
+
+function int(n){return nf.format(Math.round(Number(n) || 0))}
+function pct(p){return (Math.round(p * 1000) / 10).toLocaleString("fr-FR") + " %"}
+function money(v, cur){return (Math.round((v || 0) * 100) / 100).toLocaleString("fr-FR") + " " + (!cur || cur === "USD" ? "$" : cur)}
+function dayLabel(iso){const [y, m, d] = iso.split("-").map(Number);return JOURS[new Date(y, m - 1, d).getDay()] + " " + d + " " + MOIS[m - 1]}
+function clock(){try{return new Date().toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit", timeZone: TZ})}catch(e){return new Date().toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"})}}
+function longDate(iso){const [y, m, d] = iso.split("-").map(Number);const s = new Date(y, m - 1, d).toLocaleDateString("fr-FR", {weekday: "long", day: "numeric", month: "long"});return s.charAt(0).toUpperCase() + s.slice(1)}
+
+// Compte de l'ancienne valeur à la nouvelle (chiffres à chasse fixe : rien ne bouge autour).
+function countTo(el, key, from, to, ms){
+  cancelAnimationFrame(S.anim[key] || 0);
+  if (from === null || from === to || reduce){el.textContent = int(to);return}
+  const t0 = performance.now();
+  const step = (now) => {const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = int(from + (to - from) * e);if (p < 1) S.anim[key] = requestAnimationFrame(step)};
+  S.anim[key] = requestAnimationFrame(step);
+}
+// Le chiffre change : « +3 » à la place du titre, le cumul grossit un instant et passe au vert.
+function celebrate(delta){
+  const big = $("c-cumul"), bump = $("c-bump"), hero = big.closest(".hero");
+  bump.textContent = (delta > 0 ? "+" : "−") + int(Math.abs(delta));
+  clearTimeout(S.cool);bump.classList.remove("go");big.classList.remove("pop", "hot");void big.offsetWidth;
+  bump.classList.add("go");big.classList.add("pop", "hot");hero.classList.add("bumping");
+  setTimeout(() => big.classList.remove("hot"), 1400);
+  S.cool = setTimeout(() => hero.classList.remove("bumping"), 2300);
+}
+
+function render(d){
+  const c = d.campaign, t = d.today, nm = d.next_milestone, first = S.cumul === null;
+  const dayTxt = c.day > 0 ? "Jour <b>" + c.day + "</b> / " + c.days : "Départ " + dayLabel(c.start);
+  $("c-day").innerHTML = dayTxt;
+  $("c-goal").textContent = int(c.target);
+  countTo($("c-cumul"), "cumul", S.cumul, c.cumul, 1200);
+  countTo($("c-today"), "today", S.today, t.cards, 1200);
+  if (!first && c.cumul !== S.cumul) celebrate(c.cumul - S.cumul);
+  S.cumul = c.cumul;S.today = t.cards;
+  const share = c.target ? Math.min(1, c.cumul / c.target) : 0;
+  $("c-pct").textContent = pct(share) + " du défi";
+  $("c-bar").style.width = (share * 100) + "%";
+  const ms = d.milestones.filter((m) => m.target < c.target);
+  $("c-ticks").innerHTML = ms.map((m) => '<span class="tick" style="left:' + (m.target / c.target * 100) + '%"></span>').join("");
+  $("c-scale").innerHTML = '<span style="left:0">0</span>' + ms.map((m) => '<span class="' + (m.reached ? "ok" : "") + '" style="left:' + (m.target / c.target * 100) + '%">' + int(m.target) + "</span>").join("") +
+    '<span style="left:100%">' + int(c.target) + "</span>";
+  $("c-today-target").textContent = int(t.target);
+  $("c-today-bar").style.width = Math.min(100, t.target ? t.cards / t.target * 100 : 0) + "%";
+  if (nm){
+    $("c-ms").textContent = int(nm.target) + " cartes le " + dayLabel(nm.date);
+    $("c-ms-sub").textContent = nm.remaining > 0 ? "encore " + int(nm.remaining) + " · " + int(nm.per_day_needed) + " par jour" : "jalon atteint ✓";
+  } else {
+    $("c-ms").textContent = c.cumul >= c.target ? "Défi relevé ✓" : "Campagne terminée";
+    $("c-ms-sub").textContent = int(c.cumul) + " cartes sur " + int(c.target);
+  }
+  $("c-margin-v").textContent = money(d.margin.total, d.margin.currency);
+  $("c-margin-sub").textContent = money(d.margin.today, d.margin.currency) + " aujourd'hui";
+  $("c-live").textContent = int(c.cumul) + " cartes vendues, " + int(t.cards) + " sur " + int(t.target) + " aujourd'hui.";
+  S.data = d;
+}
+function status(text, warn){const el = $("c-status");el.textContent = text;el.classList.toggle("warn", !!warn)}
+function stamp(){status((S.data ? longDate(S.data.day) + " · " : "") + "à jour à " + clock())}
+
+async function refresh(manual){
+  if (S.busy) return;
+  S.busy = true;const btn = $("c-refresh");btn.disabled = true;btn.classList.add("spin");
+  const started = Date.now();
+  try {
+    const res = await fetch("/api/ws/compteur", {credentials: "same-origin", cache: "no-store", headers: {Accept: "application/json"}});
+    if (res.status === 401){$("c-veil").hidden = false;return}
+    if (!res.ok) throw new Error("http " + res.status);
+    const d = await res.json();
+    // La roue tourne au moins un instant : on voit à l'image qu'on a rafraîchi.
+    if (manual) await new Promise((r) => setTimeout(r, Math.max(0, 550 - (Date.now() - started))));
+    render(d);S.lastOk = Date.now();stamp();
+  } catch (e){
+    status((navigator.onLine === false ? "Pas de réseau" : "Chiffres indisponibles") + (S.lastOk ? " · derniers chiffres de " + new Date(S.lastOk).toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"}) : ""), true);
+  } finally {
+    S.busy = false;btn.disabled = false;btn.classList.remove("spin");schedule();
+  }
+}
+// Rafraîchi toutes les 2 minutes quand la page est visible ; rien quand elle est cachée.
+function schedule(){clearTimeout(S.timer);if (!document.hidden) S.timer = setTimeout(() => refresh(false), 120000)}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden){clearTimeout(S.timer);return}
+  lockScreen();if (Date.now() - S.lastOk > 30000) refresh(false);else schedule();
+});
+addEventListener("online", () => refresh(false));
+$("c-refresh").addEventListener("click", () => refresh(true));
+
+// L'écran reste allumé pendant qu'on filme (si le navigateur le permet).
+async function lockScreen(){try{if ("wakeLock" in navigator && !document.hidden && (!S.wake || S.wake.released)) S.wake = await navigator.wakeLock.request("screen")}catch(e){}}
+
+// Marge : cachée par défaut, jamais mémorisée (on ne la filme pas par mégarde).
+$("c-margin-btn").addEventListener("click", (e) => {const on = $("c-margin").hidden;$("c-margin").hidden = !on;e.currentTarget.setAttribute("aria-pressed", String(on))});
+
+// Thème : automatique, sombre ou clair (même réglage que l'espace d'équipe).
+function themeColor(){$("c-theme-color").setAttribute("content", getComputedStyle(root).getPropertyValue("--bg").trim() || "#FFFFFF")}
+function applyTheme(t){if (t === "light" || t === "dark") root.setAttribute("data-theme", t);else root.removeAttribute("data-theme");
+  $("c-theme-l").textContent = {auto: "Auto", dark: "Sombre", light: "Clair"}[t] || "Auto";themeColor()}
+function storedTheme(){try{return localStorage.getItem("ws_theme") || "auto"}catch(e){return "auto"}}
+$("c-theme").addEventListener("click", () => {const cur = storedTheme(), next = cur === "auto" ? "dark" : cur === "dark" ? "light" : "auto";
+  try{localStorage.setItem("ws_theme", next)}catch(e){}applyTheme(next)});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", themeColor);
+applyTheme(storedTheme());
+
+const fs = $("c-fs");
+if (document.fullscreenEnabled){fs.hidden = false;
+  fs.addEventListener("click", () => {if (document.fullscreenElement) document.exitFullscreen();else root.requestFullscreen().catch(() => {})})}
+
+let initial = null;
+try{initial = JSON.parse($("c-init").textContent)}catch(e){}
+if (initial){render(initial);S.lastOk = Date.now();stamp();schedule()}else refresh(false);
+lockScreen();
+if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("/sw.js", {updateViaCache: "none"}).catch(() => {});
+</script>
+</body>
+</html>

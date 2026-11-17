@@ -11,7 +11,10 @@ LE GARDIEN (middleware `guard`) :
   fois connecté, ce jeton doit aussi être celui de la session ;
 - `/api/ws/*` exige une session valide, relue en base à chaque requête
   (compte actif, même version de session) : sinon 401.
-Chaque réponse porte des en-têtes de sécurité ; la page a sa propre CSP.
+- hors de `/api/`, rien n'est demandé : la page « / » est une coquille sans
+  donnée ; le manifeste, `/sw.js` et les icônes sont publics et ne révèlent
+  rien (`mobile.py`) ; `/compteur` vérifie lui-même la session.
+Chaque réponse porte des en-têtes de sécurité ; chaque page a sa CSP.
 
 LES JOURNAUX ne contiennent jamais de numéro : la partie « ?… » des adresses
 est retirée des journaux d'accès et toute suite de chiffres qui ressemble à un
@@ -28,7 +31,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 
-from app import auth, connect, digest, evening, followups, sales, security
+from app import auth, connect, digest, evening, followups, mobile, sales, security
 from app import workspace as ws
 from app.config import get_settings
 
@@ -44,6 +47,9 @@ _HEADERS = {
     "Cross-Origin-Opener-Policy": "same-origin",
 }
 _API_CSP = "default-src 'none'; frame-ancestors 'none'"
+# Les pages HTML ont la CSP de la page ; le service worker, la sienne (il relit
+# la coquille sur la même origine) ; tout le reste (API, manifeste, icônes) : rien.
+_CSP_BY_PATH = {ws.PAGE_PATH: ws.WORKSPACE_CSP, mobile.COUNTER_PATH: ws.WORKSPACE_CSP, mobile.SW_PATH: mobile.SW_CSP}
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -126,7 +132,7 @@ def _deny(status: int, detail: str) -> JSONResponse:
 def _secure(response, path: str):
     for key, value in _HEADERS.items():
         response.headers.setdefault(key, value)
-    response.headers["Content-Security-Policy"] = ws.WORKSPACE_CSP if path == ws.PAGE_PATH else _API_CSP
+    response.headers["Content-Security-Policy"] = _CSP_BY_PATH.get(path, _API_CSP)
     if get_settings().cookie_secure:
         response.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
     return response
@@ -160,5 +166,6 @@ def healthz():
     return {"ok": True, "mode": "local" if get_settings().local else "supabase"}
 
 
-for _router in (auth.router, ws.router, sales.router, followups.router, evening.router, digest.router, connect.router):
+for _router in (auth.router, ws.router, sales.router, followups.router, evening.router, digest.router, connect.router,
+                mobile.router):
     app.include_router(_router)
