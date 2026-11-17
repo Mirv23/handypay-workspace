@@ -162,3 +162,6 @@ def healthz():
 
 for _router in (auth.router, ws.router, sales.router, followups.router, evening.router, digest.router, connect.router):
     app.include_router(_router)
+
+from app import finances  # noqa: E402 - module Finances (relevé, dépenses, versements, dette)
+app.include_router(finances.router)

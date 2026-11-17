@@ -162,6 +162,32 @@ SCHEMA: dict[str, dict] = {
     }, unique=[("username", "day")], touch=True),
 }
 
+# ==== FINANCES ==== (miroir de sql/finances.sql)
+SCHEMA.update({
+    "workspace_fin_expenses": T({
+        "id": UUID, "day": None, "category": None, "amount": None, "paid_by": "", "note": "",
+        "status": "en_attente", "needs_approval": False, "required": list, "decided_by": "", "decided_at": None,
+        "refusal_reason": "", "created_by": "", "created_at": NOW, "updated_at": NOW,
+    }, touch=True),
+    "workspace_fin_approvals": T({
+        "id": UUID, "expense_id": None, "username": None, "created_at": NOW,
+    }, unique=[("expense_id", "username")], fks=[("expense_id", "workspace_fin_expenses", "id", "cascade")]),
+    "workspace_fin_payouts": T({
+        "id": UUID, "username": None, "month": None, "kind": "salaire", "day": None, "amount": None,
+        "method": None, "note": "", "created_by": "", "cancelled_at": None, "cancelled_by": "",
+        "created_at": NOW, "updated_at": NOW,
+    }, touch=True),
+    "workspace_fin_debt_payments": T({
+        "id": UUID, "day": None, "amount": None, "method": "especes", "note": "", "created_by": "",
+        "cancelled_at": None, "cancelled_by": "", "created_at": NOW, "updated_at": NOW,
+    }, touch=True),
+    "workspace_fin_incomes": T({
+        "id": UUID, "day": None, "label": None, "amount": None, "note": "", "created_by": "",
+        "cancelled_at": None, "cancelled_by": "", "created_at": NOW, "updated_at": NOW,
+    }, touch=True),
+})
+# ==== FIN FINANCES ====
+
 # Index inverse des clés étrangères : table parente → [(enfant, colonne, colonne parente, action)].
 _CHILDREN: dict[str, list[tuple[str, str, str, str]]] = {}
 for _child, _spec in SCHEMA.items():
