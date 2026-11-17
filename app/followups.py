@@ -461,16 +461,17 @@ def list_followups(
             query = query.eq("status", status)
         return _search(query, q)
 
-    try:
-        res = build(True).order("created_at", desc=True).order("id").range(offset, offset + limit - 1).execute()
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("Lecture des fiches impossible (%s)", type(exc).__name__)
-        raise HTTPException(status_code=503, detail="Relances momentanément indisponibles.")
-    rows = [r for r in (getattr(res, "data", None) or []) if isinstance(r, dict)]
+    # Le total d'abord, la page ensuite (sans compte) : PostgREST répond 416
+    # (« Requested range not satisfiable ») quand le compte exact est demandé avec
+    # un décalage au-delà du total, ce qui arrive dès qu'une page se vide entre
+    # deux appels (fiches traitées pendant qu'on est en page 2).
+    total = db_count(build(True).limit(1), "lecture des fiches")
+    rows = [] if offset and offset >= total else ws._run(
+        build(False).order("created_at", desc=True).order("id").range(offset, offset + limit - 1), "lecture des fiches")
     mine_due = db_count(_queue_query(client, me.username, today, count=True).limit(1), "file du jour")
     return {
         "items": [fo_out(r) for r in rows],
-        "total": int(getattr(res, "count", None) or len(rows)),
+        "total": total,
         "offset": offset, "limit": limit, "mine_due": mine_due, "today": today,
         "to_treat": to_treat_for(client, me.username, today),
     }

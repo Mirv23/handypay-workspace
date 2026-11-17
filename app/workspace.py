@@ -816,16 +816,20 @@ def list_tasks(
     me = _me(request, client)
     server_time = _now()
     visible = {p["id"] for p in _visible_projects(client, me)}
-    query = client.table(T_TASKS).select("*")
     if since:
         try:
             datetime.fromisoformat(since.replace("Z", "+00:00"))
         except ValueError:
             raise HTTPException(status_code=400, detail="Paramètre since invalide.")
-        query = query.gt("updated_at", since)
-    else:
-        query = query.eq("archived", archived)
-    rows = _run(query.limit(_TASK_LIMIT), "lecture des tâches")
+
+    def build():
+        query = client.table(T_TASKS).select("*")
+        query = query.gt("updated_at", since) if since else query.eq("archived", archived)
+        return query.order("id")
+
+    # Page par page : Supabase ne rend jamais plus de 1 000 lignes d'un coup,
+    # même avec .limit(5000) ; au-delà, des tâches manquaient sans le dire.
+    rows = dbmod.fetch_all(build, "lecture des tâches", cap=_TASK_LIMIT)
     horizon = (datetime.now(timezone.utc) - timedelta(days=_DONE_HORIZON_DAYS)).isoformat()
     tasks = []
     for r in rows:
@@ -1882,7 +1886,8 @@ def export_csv(request: Request, archived: bool = False):
     me = _me(request, client)
     projects = {p["id"]: p for p in _visible_projects(client, me)}
     cycles = {str(r.get("id")): r.get("name") for r in _run(client.table(T_CYCLES).select("id,name").limit(300), "lecture des cycles")}
-    rows = _run(client.table(T_TASKS).select("*").eq("archived", archived).limit(_TASK_LIMIT), "lecture des tâches")
+    rows = dbmod.fetch_all(lambda: client.table(T_TASKS).select("*").eq("archived", archived).order("number").order("id"),
+                           "lecture des tâches", cap=_TASK_LIMIT)
     out = io.StringIO()
     writer = csv.writer(out, delimiter=";")
     writer.writerow(["Numéro", "Projet", "Titre", "Statut", "Priorité", "Responsable", "Début", "Échéance",

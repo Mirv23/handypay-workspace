@@ -798,7 +798,7 @@ def export_statement(request: Request, mois: str = Query("", max_length=7)):
 class ExpenseIn(BaseModel):
     day: date
     category: str = Field(min_length=1, max_length=40)
-    amount: float = Field(gt=0, le=1_000_000)
+    amount: float = Field(ge=0.01, le=1_000_000)
     paid_by: str = Field(default=COMPANY, max_length=40)
     note: str = Field(default="", max_length=500)
 
@@ -932,14 +932,14 @@ class PayoutIn(BaseModel):
     month: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
     kind: Literal["salaire", "prime"] = "salaire"
     day: date
-    amount: float = Field(gt=0, le=1_000_000)
+    amount: float = Field(ge=0.01, le=1_000_000)
     method: Method
     note: str = Field(default="", max_length=300)
 
 
 class DebtPaymentIn(BaseModel):
     day: date
-    amount: float = Field(gt=0, le=10_000_000)
+    amount: float = Field(ge=0.01, le=10_000_000)
     method: Method = "especes"
     note: str = Field(default="", max_length=300)
 
@@ -947,7 +947,7 @@ class DebtPaymentIn(BaseModel):
 class IncomeIn(BaseModel):
     day: date
     label: str = Field(min_length=1, max_length=80)
-    amount: float = Field(gt=0, le=10_000_000)
+    amount: float = Field(ge=0.01, le=10_000_000)
     note: str = Field(default="", max_length=300)
 
 
