@@ -485,6 +485,79 @@ a.btn{text-decoration:none}
   .fo-top>.btn,.fo-top>a.btn{flex:1 1 auto;justify-content:center}
 }
 
+/* ==== FINANCES ==== */
+input[type=month]{border:1px solid var(--border);background:var(--surface);border-radius:var(--r-sm);padding:7px 10px;min-height:34px;width:100%}
+.fin-nav input[type=month]{width:auto;min-height:30px;padding:3px 8px}
+.fin-note{padding:12px 14px;border-radius:var(--r);margin-bottom:14px;background:var(--surface);border:1px solid var(--border);line-height:1.5}
+.fin-note.ok{background:var(--ok-soft);border-color:transparent}
+.fin-note.warn{background:var(--warn-soft);border-color:transparent}
+.fin-split{display:flex;height:16px;border-radius:999px;overflow:hidden;background:var(--surface-2);margin:2px 0 8px}
+.fin-split i{display:block;height:100%;min-width:2px}
+.fin-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-bottom:4px}
+.fin-legend span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.fin-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.fin-step{display:grid;grid-template-columns:30px minmax(0,1fr);gap:4px 12px;padding:14px 0 12px;border-top:1px solid var(--border)}
+.fin-rk{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--surface-2);color:var(--muted)}
+.fin-step.ok .fin-rk{background:var(--ok-soft);color:var(--ok)}
+.fin-step.short .fin-rk{background:var(--danger-soft);color:var(--danger)}
+.fin-sh{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.fin-sh b{font-size:15px}
+.fin-amt{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.fin-amt small{font-weight:500;color:var(--muted);font-size:13px}
+.fin-ex{font-size:13px;color:var(--muted);margin:2px 0 8px}
+.fin-bar{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden;display:flex}
+.fin-bar i{display:block;height:100%}
+.fin-bar .p{background:var(--ok)}
+.fin-bar .m{background:repeating-linear-gradient(135deg,var(--danger-soft) 0 5px,color-mix(in srgb,var(--danger) 45%,transparent) 5px 8px)}
+.fin-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fin-step details.more{margin-top:2px}
+.fin-step details.more>summary{padding:6px 0 2px}
+.fin-lines{font-size:13px}
+.fin-lines>div{display:flex;gap:8px;align-items:baseline;padding:4px 0;border-top:1px dashed var(--border)}
+.fin-lines .v{margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.fin-lines small{color:var(--muted)}
+.fin-sec2{margin-top:16px}
+.fin-pt{display:grid}
+.fin-pr{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(5,minmax(0,1fr));gap:8px;align-items:center;padding:9px 4px;border-top:1px solid var(--border);font-variant-numeric:tabular-nums}
+.fin-pr.h{border-top:0;font-size:12px;color:var(--muted);font-weight:600}
+.fin-pr>span:not(.pn){text-align:right}
+.fin-pr.h>span:first-child{text-align:left}
+.fin-sub{font-weight:500}
+.fin-pr .pn{display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fin-pr small{display:block;font-size:11px;color:var(--muted)}
+.fin-pr.tot{font-weight:700;border-top:2px solid var(--border)}
+.fin-left{color:var(--warn);font-weight:700}
+.fin-zero{color:var(--ok)}
+.fin-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 2px;border-top:1px solid var(--border)}
+.fin-row .t{flex:1 1 170px;min-width:0;overflow-wrap:anywhere}
+.fin-row .t small{display:block;color:var(--muted);font-size:12px}
+.fin-row .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fin-big{font-size:26px;font-weight:800;line-height:1.15;margin-bottom:8px}
+.fin-big small{font-size:13px;font-weight:500;color:var(--muted)}
+.fin-votes{display:inline-flex;align-items:center;padding-left:4px}
+.fin-votes .avatar{width:22px;height:22px;font-size:9px;margin-left:-4px;border:2px solid var(--surface)}
+.fin-votes .off .avatar{opacity:.35;filter:grayscale(1)}
+.fin-payroll{display:grid;gap:2px;border:1px solid var(--border);border-radius:var(--r-sm);padding:4px}
+.fin-pay-r{display:flex;align-items:center;gap:8px;padding:4px 6px}
+.fin-pay-r label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer}
+.fin-pay-r input[type=checkbox]{width:auto;min-height:0;margin:0}
+.fin-pay-r input[type=number]{width:96px;flex:none}
+@media (max-width:700px){
+  .fin-pr.h{display:none}
+  .fin-pr{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:8px;align-items:start}
+  .fin-sub{display:none}
+  .fin-row .t{flex-basis:100%}
+  .fin-pr .pn{grid-column:1/-1;font-weight:600}
+  .fin-pr>span:not(.pn){text-align:left}
+  .fin-pr span[data-l]::before{content:attr(data-l);display:block;font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+  .fin-step{grid-template-columns:26px minmax(0,1fr);gap:4px 10px}
+  .fin-rk{width:26px;height:26px;font-size:12px}
+  .fin-amt{margin-left:0;flex-basis:100%}
+  .fin-nav .btn[download],.fin-nav [data-fin=settings]{flex:1 1 auto;justify-content:center}
+  .fin-nav .grow{flex-basis:100%;height:0}
+}
+/* ==== FIN FINANCES ==== */
+
 @media (max-width:1100px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:900px){
   #app{grid-template-columns:minmax(0,1fr)}
@@ -845,7 +918,7 @@ function navBtn(k,label,_glyph,on,n){return '<button class="nav-i'+(on?" on":"")
 function renderNav(){
   const v=S.view,urgent=tasks().filter(t=>t.assignee===S.me.username&&open(t)&&t.due_date&&t.due_date<=today()).length;
   let h=navBtn("home","Aujourd'hui","",v==="home"||v==="mine",urgent)+navBtn("ventes","Ventes","",v==="ventes")+
-    navBtn("relances","Relances","",v==="relances",S.foDue)+navBtn("soir","Tableau du soir","",v==="soir")+navBtn("board","Tâches","",TASK_VIEWS.has(v))+
+    navBtn("relances","Relances","",v==="relances",S.foDue)+navBtn("soir","Tableau du soir","",v==="soir")+(canEdit()?navBtn("finances","Finances","",v==="finances"):"")+navBtn("board","Tâches","",TASK_VIEWS.has(v))+
     navBtn("goals","Objectifs","",v==="goals")+navBtn("team","Équipe","",v==="team");
   h+='<div class="nav-h">Projets'+(canEdit()?'<button class="icon-btn" style="width:24px;height:24px" data-act="new-project" title="Nouveau projet" aria-label="Nouveau projet">'+ic("plus",14)+"</button>":"")+"</div>";
   const act=S.projects.filter(p=>p.status!=="archive").sort((a,b)=>a.name.localeCompare(b.name,"fr"));
@@ -895,7 +968,7 @@ function render(){
   const v=S.view;const title=v==="project"?(proj(S.param)||{}).name:TASK_VIEWS.has(v)?"Tâches":(VIEWS.find(x=>x[0]===v)||[])[1];
   $("#view-title").textContent=title||"";document.title=(title?title+" · ":"")+"HandyPay · Espace d'équipe";
   renderFilters();
-  const fn={home:vHome,ventes:vSales,relances:vFollowups,soir:vEvening,mine:vMine,board:vBoard,list:vList,calendar:vCalendar,timeline:vTimeline,goals:vGoals,cycles:vCycles,team:vTeam,docs:vDocs,reports:vReports,trash:vTrash,project:vProject}[v];
+  const fn={home:vHome,ventes:vSales,relances:vFollowups,soir:vEvening,finances:vFinances,mine:vMine,board:vBoard,list:vList,calendar:vCalendar,timeline:vTimeline,goals:vGoals,cycles:vCycles,team:vTeam,docs:vDocs,reports:vReports,trash:vTrash,project:vProject}[v];
   try{fn()}catch(e){console.error(e);$("#view").innerHTML='<div class="empty">Cette vue n\'a pas pu s\'afficher. Recharge la page.</div>'}
 }
 const V=()=>$("#view");
@@ -1702,6 +1775,240 @@ function parseQuick(src){
     else{const k=days.indexOf(w);let n=(k-parseD(t).getDay()+7)%7;if(n===0)n=7;out.due_date=addDays(t,n)}return " "});
   out.title=s.replace(/\s+/g," ").trim();return out;
 }
+
+/* ==== FINANCES ==== */
+/* Le relevé du mois : la marge paie les étapes dans l'ordre. Le serveur
+   (app/finances.py) fait tous les calculs et décide des droits ; la page affiche.
+   Lecture : responsables et membres. Le mois est dans l'adresse : #/finances/2026-11. */
+VIEWS.push(["finances","Finances","$","f"]);
+NAV_IC.finances="coins";
+ICONS.coins='<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>';
+HP_VIEWS.add("finances");
+const FIN={seq:0,data:null};
+const FIN_M={moncash:"MonCash",natcash:"NatCash",handypay:"HandyPay",especes:"Espèces"};
+const FIN_ST={en_attente:["En attente","warn"],validee:["Validée","ok"],refusee:["Refusée","danger"]};
+const FIN_MOIS=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const FIN_COL={charges:"#64748B",salaires:"var(--primary)",dette:"var(--accent)",reserve:"#319795",primes:"var(--ok)",croissance:"var(--ai)"};
+// « 1 920 $ » : espace insécable pour les milliers et devant le symbole ; centimes seulement s'il y en a.
+function fm(v){const c=Math.round((Number(v)||0)*100),a=Math.abs(c),u=Math.floor(a/100),d=a%100;
+  return (c<0?"−":"")+String(u).replace(/\B(?=(\d{3})+(?!\d))/g," ")+(d?","+String(d).padStart(2,"0"):"")+" $"}
+function finMonthL(k){return FIN_MOIS[Number(k.slice(5,7))-1]+" "+k.slice(0,4)}
+function finShift(k,n){let y=Number(k.slice(0,4)),m=Number(k.slice(5,7))-1+n;y+=Math.floor(m/12);m=((m%12)+12)%12;return y+"-"+pad(m+1)}
+function finMonth(){return S.param&&/^\d{4}-(0[1-9]|1[0-2])$/.test(S.param)?S.param:today().slice(0,7)}
+function finPct(a,b){return b>0?Math.max(0,Math.min(100,a/b*100)):0}
+function finCards(n){return n==null?"–":intf(n)}
+async function vFinances(){
+  if(!canEdit()){V().innerHTML='<div class="empty card">Les finances sont réservées aux responsables et aux membres de l\'équipe.</div>';return}
+  const month=finMonth(),seq=++FIN.seq;
+  if(!$("#fin-root"))V().innerHTML='<div id="fin-root" class="muted">Chargement…</div>';
+  let r;try{r=await api("GET",API+"/finances?mois="+month)}
+  catch(e){if(seq===FIN.seq&&S.view==="finances")V().innerHTML='<div class="empty card">'+esc(e.message)+"</div>";return}
+  if(seq!==FIN.seq||S.view!=="finances")return;
+  FIN.data=r;V().innerHTML=finHTML(r);
+}
+function finSummary(r){
+  const pj=r.projection,ai=r.arrears_in.total,ao=r.arrears_out.total,res=r.steps[3],miss=r.steps.slice(0,4).reduce((t,s)=>t+s.missing,0);
+  let cls="warn",msg;
+  if(r.is_future){cls="";msg="Mois à venir : rien n'est encore vendu."}
+  else if(r.covered){cls="ok";msg="<b>Tout est payé"+(r.is_current?" pour l'instant":"")+"</b> : charges, salaires, dette et réserve. Prime : <b>"+fm(r.surplus.bonus_each)+"</b> par personne."}
+  else if(r.is_current){msg="<b>Pour l'instant, la marge ne couvre pas tout</b> : il manque "+fm(miss)+(r.threshold.cards_left?", soit encore "+intf(r.threshold.cards_left)+" carte"+(r.threshold.cards_left>1?"s":""):"")+"."+
+    (pj?" À ce rythme ("+num(pj.per_day)+" cartes par jour), le mois finira vers <b>"+intf(pj.cards)+" cartes</b> : "+(pj.reached?"tout sera payé, avec "+fm(pj.bonus_each)+" de prime chacun.":"il manquera encore "+fm(pj.missing)+"."):"")}
+  else if(ao>0)msg="<b>Mois sous le seuil</b> : "+fm(ao)+" n'ont pas pu être payés. Ils passent en arriéré sur "+finMonthL(finShift(r.month,1))+", avant toute prime.";
+  else msg="<b>Réserve incomplète</b> : il lui manque "+fm(res.missing)+" (la réserve n'est pas reportée).";
+  if(ai>0)msg+=" Ce mois rattrape d'abord "+fm(ai)+" d'arriérés.";
+  if(r.before_start)msg+=" Ce mois précède le début du suivi ("+finMonthL(r.start_month)+") : aucun arriéré n'y est compté.";
+  return '<div class="fin-note '+cls+'">'+msg+"</div>";
+}
+function finStep(s,r){
+  const short=s.missing>0,cls=s.due>0?(short?" short":" ok"):"";
+  let h='<div class="fin-step'+cls+'"><span class="fin-rk">'+s.rank+'</span><div><div class="fin-sh"><b>'+esc(s.title)+'</b><span class="fin-amt">'+fm(s.paid)+(s.due!==s.paid?" <small>sur "+fm(s.due)+"</small>":"")+"</span></div>"+
+    '<div class="fin-ex">'+esc(s.explain)+"</div>"+
+    (s.due>0?'<div class="fin-bar" aria-hidden="true"><i class="p" style="width:'+finPct(s.paid,s.due)+'%"></i><i class="m" style="width:'+finPct(s.missing,s.due)+'%"></i></div>':"");
+  const tags=[];
+  if(s.arrears_in>0)tags.push('<span class="pill warn">dont '+fm(s.arrears_in)+" d'arriéré</span>");
+  if(short)tags.push('<span class="pill danger">manque '+fm(s.missing)+(s.key==="reserve"?" (non reporté)":r.is_past?" → reporté":"")+"</span>");
+  else if(s.due>0)tags.push('<span class="pill ok">payé ✓</span>');
+  if(s.key==="dette")tags.push('<span class="pill">solde au 1er du mois : '+fm(s.balance_start)+"</span>");
+  if(tags.length)h+='<div class="fin-tags">'+tags.join("")+"</div>";
+  let lines="";
+  if(s.key==="charges")lines=s.lines.map(x=>"<div><span>"+esc(x.label)+(x.note?" <small>("+esc(x.note)+")</small>":"")+(x.spent?" <small>· dépensé "+fm(x.spent)+"</small>":"")+'</span><span class="v">'+fm(x.paid)+(x.missing?" <small>sur "+fm(x.due)+"</small>":"")+"</span></div>").join("");
+  if(s.key==="salaires")lines=s.lines.map(x=>"<div><span>"+esc(x.display_name)+(x.arrears_in?" <small>("+fm(x.base)+" + "+fm(x.arrears_in)+" d'arriéré)</small>":"")+'</span><span class="v">'+fm(x.paid)+(x.missing?" <small>sur "+fm(x.due)+"</small>":"")+"</span></div>").join("");
+  if(lines)h+='<details class="more"><summary>Détail</summary><div class="fin-lines">'+lines+"</div></details>";
+  return h+"</div></div>";
+}
+function finSurplus(r){
+  const s=r.steps[4];
+  let h='<div class="fin-step'+(s.total>0?" ok":"")+'"><span class="fin-rk">5</span><div><div class="fin-sh"><b>'+esc(s.title)+'</b><span class="fin-amt">'+fm(s.total)+"</span></div>"+
+    '<div class="fin-ex">'+esc(s.explain)+"</div>";
+  if(s.total>0)h+='<div class="fin-bar" aria-hidden="true"><i style="width:'+finPct(s.bonus_pool,s.total)+'%;background:'+FIN_COL.primes+'"></i><i style="width:'+finPct(s.growth,s.total)+'%;background:'+FIN_COL.croissance+'"></i></div>'+
+    '<div class="fin-tags"><span class="pill ok">Primes '+fm(s.bonus_pool)+(s.people?" = "+fm(s.bonus_each)+" × "+s.people:"")+'</span><span class="pill info">Croissance '+fm(s.growth)+"</span>"+
+    (s.growth_spent>0?'<span class="pill warn">dont '+fm(s.growth_spent)+" déjà dépensés (achats hors charges)</span>":"")+"</div>";
+  else h+='<div class="small muted">Pas de surplus, donc pas de prime, tant que les étapes 1 à 4 ne sont pas payées.</div>';
+  return h+"</div></div>";
+}
+function finExpense(x){
+  const st=FIN_ST[x.status]||["",""],who=x.paid_by==="entreprise"?"caisse de l'entreprise":"payé par "+nameOf(x.paid_by);
+  let votes="";
+  if(x.needs_approval&&x.status==="en_attente"){const ok=new Set(x.approvals.map(a=>a.username));
+    votes='<span class="fin-votes" title="'+esc("Accords : "+x.required.map(u=>nameOf(u)+(ok.has(u)?" ✓":" (attendu)")).join(", "))+'">'+x.required.map(u=>'<span class="'+(ok.has(u)?"":"off")+'">'+av(u)+"</span>").join("")+
+      '<span class="small muted" style="margin-left:6px">'+ok.size+"/"+x.required.length+"</span></span>"}
+  return '<div class="fin-row"><span class="t"><b>'+esc(x.category)+"</b> · "+fm(x.amount)+"<small>"+esc(fmtDay(x.day)+" · "+who+(x.note?" · "+x.note:"")+(x.refusal_reason?" · refus : "+x.refusal_reason:""))+"</small></span>"+votes+
+    '<span class="pill '+st[1]+'">'+st[0]+"</span>"+
+    (x.can_approve?'<button class="btn sm primary" data-fin="approve" data-id="'+esc(x.id)+'">J\'approuve</button>':"")+
+    (x.can_validate?'<button class="btn sm ok-t" data-fin="validate" data-id="'+esc(x.id)+'">Valider</button>':"")+
+    (x.can_refuse?'<button class="btn sm ghost danger-t" data-fin="refuse" data-id="'+esc(x.id)+'">Refuser</button>':"")+"</div>"}
+function finHTML(r){
+  const lead=r.can_manage,m=r.margin,th=r.threshold,pj=r.projection,sp=r.surplus,L=finMonthL(r.month),st=Object.fromEntries(r.steps.map(s=>[s.key,s]));
+  let h='<div id="fin-root"><div class="daynav fin-nav"><button class="btn sm" data-fin="prev" aria-label="Mois précédent">◀</button>'+
+    '<input type="month" data-fin-month value="'+esc(r.month)+'" aria-label="Mois du relevé"><button class="btn sm" data-fin="next" aria-label="Mois suivant">▶</button>'+
+    (r.is_current?"":'<button class="btn sm ghost" data-fin="now">Ce mois-ci</button>')+'<span class="grow"></span>'+
+    (lead?'<a class="btn sm" href="'+API+"/finances/export.csv?mois="+esc(r.month)+'" download>Exporter (CSV)</a><button class="btn sm" data-fin="settings">Réglages</button>':"")+"</div>";
+  h+=finSummary(r);
+  h+='<div class="tiles">'+
+    tileX("Marge de "+L,fm(m.total),'<div class="small muted">'+intf(m.cards)+" carte"+(m.cards>1?"s":"")+" × "+fm(m.per_card)+(m.other_income?" + "+fm(m.other_income)+" d'autres revenus":"")+"</div>")+
+    tileX("Seuil du mois",finCards(th.cards)+"<small> cartes</small>",pbar(th.cards_month?m.cards/th.cards_month:1,th.reached?"ok":"")+
+      '<div class="small muted">'+(th.reached?"Atteint ✓":"Encore "+finCards(th.cards_left)+" carte"+(th.cards_left>1?"s":""))+
+      (th.cards_month!==th.cards?" · "+finCards(th.cards_month)+" ce mois-ci ("+[r.arrears_in.total>0?"arriérés":"",m.other_income>0?"autres revenus":""].filter(Boolean).join(" et ")+" compris)":"")+"</div>"+
+      (r.debt.balance>0&&th.cards_without_debt!==th.cards?'<div class="small faint">'+finCards(th.cards_without_debt)+" une fois la dette remboursée</div>":""))+
+    tileX("Prime par personne",fm(sp.bonus_each),'<div class="small muted">'+(sp.people?sp.people+" personne"+(sp.people>1?"s":"")+" payée"+(sp.people>1?"s":""):"personne n'est payé")+(sp.bonus_each?"":" · rien tant que tout n'est pas payé")+"</div>")+
+    (pj?tileX("Projection fin de mois",intf(pj.cards)+"<small> cartes</small>",'<div class="small muted">'+num(pj.per_day)+" par jour · prime "+fm(pj.bonus_each)+'</div><div class="small" style="color:'+(pj.reached?"var(--ok)":"var(--danger)")+'">'+(pj.reached?"Seuil atteint à ce rythme":"Sous le seuil à ce rythme")+"</div>")
+      :tileX("Reste à verser",fm(r.totals.remaining),'<div class="small muted">'+fm(r.totals.paid_out)+" versés sur "+fm(r.totals.total_due)+" dus</div>"))+"</div>";
+  // La cascade : d'abord la répartition de la marge, puis chaque étape.
+  const seg=(k,v,l)=>v>0&&m.total>0?'<i style="width:'+finPct(v,m.total)+"%;background:"+FIN_COL[k]+'" title="'+esc(l+" : "+fm(v))+'"></i>':"";
+  h+='<div class="card sec"><h2>La cascade de '+esc(L)+' <span class="small muted fin-sub">la marge paie chaque étape, dans l\'ordre</span></h2>';
+  if(m.total>0)h+='<div class="fin-split" role="img" aria-label="Répartition de la marge">'+seg("charges",st.charges.paid,"Charges fixes")+seg("salaires",st.salaires.paid,"Salaires")+seg("dette",st.dette.paid,"Dette")+
+    seg("reserve",st.reserve.paid,"Réserve")+seg("primes",sp.bonus_pool,"Primes")+seg("croissance",sp.growth,"Croissance")+"</div>"+
+    '<div class="fin-legend">'+[["charges","Charges"],["salaires","Salaires"],["dette","Dette"],["reserve","Réserve"],["primes","Primes"],["croissance","Croissance"]].map(([k,l])=>'<span><i style="background:'+FIN_COL[k]+'"></i>'+l+"</span>").join("")+"</div>";
+  h+=r.steps.slice(0,4).map(s=>finStep(s,r)).join("")+finSurplus(r)+"</div>";
+  // Par personne.
+  h+='<div class="card sec fin-sec2"><h2>Par personne'+(lead?'<button class="btn sm" data-fin="payout">+ Versement</button>':"")+"</h2>";
+  if(r.people.length){
+    h+='<div class="fin-pt"><div class="fin-pr h"><span>Personne</span><span>Salaire de base</span><span>Prime</span><span>Total dû</span><span>Déjà versé</span><span>Reste à verser</span></div>'+
+      r.people.map(p=>'<div class="fin-pr"><span class="pn">'+av(p.username)+" "+esc(p.display_name)+'</span><span data-l="Salaire de base">'+fm(p.salary)+
+        (p.arrears_in?"<small>dont "+fm(p.arrears_in)+" d'arriéré</small>":"")+(p.salary_missing?'<small style="color:var(--danger)">manque '+fm(p.salary_missing)+"</small>":"")+"</span>"+
+        '<span data-l="Prime">'+fm(p.bonus)+'</span><span data-l="Total dû"><b>'+fm(p.total_due)+'</b></span><span data-l="Déjà versé">'+fm(p.paid_out)+"</span>"+
+        '<span data-l="Reste à verser" class="'+(p.remaining>0?"fin-left":"fin-zero")+'">'+(p.remaining<0?"trop versé "+fm(-p.remaining):p.remaining===0&&p.total_due>0?fm(0)+" ✓":fm(p.remaining))+"</span></div>").join("")+
+      '<div class="fin-pr tot"><span class="pn">Total</span><span data-l="Salaires">'+fm(r.people.reduce((t,p)=>t+p.salary,0))+'</span><span data-l="Primes">'+fm(sp.bonus_pool)+'</span><span data-l="Total dû">'+fm(r.totals.total_due)+
+      '</span><span data-l="Déjà versé">'+fm(r.totals.paid_out)+'</span><span data-l="Reste à verser">'+fm(r.totals.remaining)+"</span></div></div>";
+  }else h+='<div class="empty">Personne n\'est payé : choisis les personnes dans les réglages.</div>';
+  h+='<p class="small muted" style="margin:8px 0 0">Total dû = salaire couvert par la marge + prime.'+(r.is_current?" Le mois n'est pas fini : ces montants montent avec les ventes.":"")+"</p></div>";
+  // Dépenses et dette.
+  const pend=r.expenses.pending,mon=r.expenses.month.filter(x=>x.status!=="en_attente"),d=r.debt;
+  h+='<div class="grid2 eq fin-sec2"><div class="card sec"><h2>Dépenses réelles<button class="btn sm" data-fin="expense">+ Proposer</button></h2>'+
+    '<div class="small muted">Au-dessus de '+fm(r.settings.approval_threshold)+", chaque personne payée approuve ; en dessous, un responsable valide.</div>"+
+    (pend.length?'<div class="grp">En attente</div>'+pend.map(finExpense).join(""):"")+
+    '<div class="grp">'+esc(L)+" · "+fm(r.expenses.validated_total)+" validés</div>"+(mon.length?mon.map(finExpense).join(""):'<div class="small muted" style="padding:4px 2px">Aucune dépense tranchée ce mois-ci.</div>')+"</div>";
+  h+='<div class="card sec"><h2>Dette '+esc(d.label.toLowerCase())+(lead&&d.balance>0?'<button class="btn sm" data-fin="debt">+ Remboursement</button>':"")+"</h2>"+
+    '<div class="fin-big">'+fm(d.balance)+" <small>"+(d.balance>0?"restent à rembourser":"dette soldée ✓")+"</small></div>"+pbar(d.initial?d.repaid/d.initial:1,"ok")+
+    '<div class="small muted" style="margin:6px 0 4px">'+fm(d.repaid)+" remboursés sur "+fm(d.initial)+(d.balance>0&&d.months_left?" · "+fm(d.monthly)+" par mois, encore "+d.months_left+" mois":"")+"</div>"+
+    (d.payments.length?d.payments.slice(0,8).map(x=>'<div class="fin-row"><span class="t">'+fm(x.amount)+"<small>"+esc(fmtDay(x.day)+" "+x.day.slice(0,4)+" · "+(FIN_M[x.method]||x.method)+(x.note?" · "+x.note:""))+"</small></span>"+
+      (lead?'<button class="btn sm ghost danger-t" data-fin="debt-cancel" data-id="'+esc(x.id)+'">Annuler</button>':"")+"</div>").join(""):'<div class="small muted">Aucun remboursement enregistré.</div>')+"</div></div>";
+  // Versements et autres revenus du mois.
+  h+='<div class="grid2 eq fin-sec2"><div class="card sec"><h2>Versements de '+esc(L)+"</h2>"+
+    (r.payouts.length?r.payouts.map(x=>'<div class="fin-row">'+av(x.username)+'<span class="t"><b>'+esc(nameOf(x.username))+"</b> · "+(x.kind==="prime"?"prime":"salaire")+"<small>"+esc(fmtDay(x.day)+" · "+(FIN_M[x.method]||x.method)+(x.note?" · "+x.note:""))+'</small></span><span class="v">'+fm(x.amount)+"</span>"+
+      (lead?'<button class="btn sm ghost danger-t" data-fin="payout-cancel" data-id="'+esc(x.id)+'">Annuler</button>':"")+"</div>").join(""):'<div class="small muted">Rien de versé pour ce mois.</div>')+"</div>";
+  h+='<div class="card sec"><h2>Autres revenus'+(lead?'<button class="btn sm" data-fin="income">+ Revenu</button>':"")+"</h2>"+
+    (r.incomes.length?r.incomes.map(x=>'<div class="fin-row"><span class="t"><b>'+esc(x.label)+"</b><small>"+esc(fmtDay(x.day)+(x.note?" · "+x.note:""))+'</small></span><span class="v">'+fm(x.amount)+"</span>"+
+      (lead?'<button class="btn sm ghost danger-t" data-fin="income-cancel" data-id="'+esc(x.id)+'">Annuler</button>':"")+"</div>").join(""):'<div class="small muted">Aucun autre revenu ce mois-ci (vente de cours…).</div>')+"</div></div>";
+  return h+"</div>";
+}
+async function finAct(b){
+  const a=b.dataset.fin,id=b.dataset.id,r=FIN.data;if(!r)return;
+  if(a==="prev"||a==="next")return go("finances",finShift(r.month,a==="prev"?-1:1));
+  if(a==="now")return go("finances");
+  if(a==="settings")return finSettingsModal(r);
+  if(a==="expense")return finExpenseModal(r);
+  if(a==="payout")return finPayoutModal(r);
+  if(a==="debt")return finDebtModal(r);
+  if(a==="income")return finIncomeModal();
+  if(a==="refuse")return modal("Refuser la dépense",'<label class="f">Raison (facultatif)</label><input type="text" name="reason" maxlength="300" placeholder="Pas ce mois-ci">',"Refuser",
+    async fd=>{await api("POST",API+"/finances/expenses/"+id+"/refuse",{reason:fv(fd,"reason")});toast("Dépense refusée.");render()});
+  const c={approve:["POST","/expenses/"+id+"/approve","Accord enregistré."],validate:["POST","/expenses/"+id+"/validate","Dépense validée."],
+    "payout-cancel":["DELETE","/payouts/"+id,"Versement annulé.","Annuler ce versement ? Il ne comptera plus."],
+    "debt-cancel":["DELETE","/debt/payments/"+id,"Remboursement annulé.","Annuler ce remboursement ? Le solde de la dette remontera."],
+    "income-cancel":["DELETE","/incomes/"+id,"Revenu annulé.","Annuler ce revenu ? Il ne comptera plus dans la marge."]}[a];
+  if(!c||(c[3]&&!confirm(c[3])))return;
+  b.disabled=true;
+  try{const res=await api(c[0],API+"/finances"+c[1]);toast(a==="approve"&&res.expense&&res.expense.status==="validee"?"Tout le monde est d'accord : dépense validée.":c[2]);render()}
+  catch(e){fail(e);b.disabled=false}
+}
+function finMethodOpts(){return Object.entries(FIN_M).map(([k,l])=>'<option value="'+k+'">'+l+"</option>").join("")}
+function finExpenseModal(r){
+  const cats=r.settings.fixed_charges.map(c=>c.label).concat(["Matériel","Transport","Formation","Autre"]),lim=fm(r.settings.approval_threshold);
+  modal("Proposer une dépense",
+    '<div class="row"><div class="grow"><label class="f">Date</label><input type="date" name="day" value="'+today()+'" required></div>'+
+    '<div class="grow"><label class="f">Montant ($)</label><input type="number" name="amount" min="0.01" step="0.01" inputmode="decimal" required></div></div>'+
+    '<label class="f">Catégorie</label><input type="text" name="category" list="fin-cats" maxlength="40" required placeholder="Matériel"><datalist id="fin-cats">'+cats.map(c=>'<option value="'+esc(c)+'">').join("")+"</datalist>"+
+    '<label class="f">Payé par</label><select name="paid_by"><option value="entreprise">La caisse de l\'entreprise</option>'+S.members.filter(m=>!m.is_ai).map(m=>'<option value="'+esc(m.username)+'">'+esc(m.display_name)+"</option>").join("")+"</select>"+
+    '<label class="f">Note</label><input type="text" name="note" maxlength="500" placeholder="Pourquoi cet achat ?">'+
+    '<p class="small muted">Jusqu\'à '+lim+(isLead()?", ta dépense est validée tout de suite":", un responsable la valide")+". Au-dessus de "+lim+", chaque personne payée doit approuver (ta proposition compte comme ton accord).</p>",
+    "Proposer",async fd=>{const amount=Number(fv(fd,"amount").replace(",","."));if(!(amount>0))throw new Error("Montant invalide.");
+      const res=await api("POST",API+"/finances/expenses",{day:fv(fd,"day"),category:fv(fd,"category"),amount,paid_by:fv(fd,"paid_by"),note:fv(fd,"note")});
+      toast(res.expense.status==="validee"?"Dépense enregistrée.":"Dépense proposée : en attente d'accord.");render()});
+}
+function finPayoutModal(r){
+  const rest=u=>{const p=r.people.find(x=>x.username===u);return p?Math.max(0,Math.round(p.remaining*100)/100):0};
+  const who=S.members.filter(m=>!m.is_ai&&(m.role!=="observateur"||r.people.some(p=>p.username===m.username)));
+  const pick=(r.people.find(p=>p.remaining>0)||who[0]||{}).username;
+  modal("Versement · "+finMonthL(r.month),
+    '<label class="f">Personne</label><select name="username">'+who.map(m=>'<option value="'+esc(m.username)+'"'+(m.username===pick?" selected":"")+">"+esc(m.display_name)+(rest(m.username)?" · reste "+fm(rest(m.username)):"")+"</option>").join("")+"</select>"+
+    '<div class="row"><div class="grow"><label class="f">Pour</label><select name="kind"><option value="salaire">Salaire</option><option value="prime">Prime</option></select></div>'+
+    '<div class="grow"><label class="f">Moyen</label><select name="method">'+finMethodOpts()+"</select></div></div>"+
+    '<div class="row"><div class="grow"><label class="f">Date du versement</label><input type="date" name="day" max="'+today()+'" value="'+today()+'"></div>'+
+    '<div class="grow"><label class="f">Montant ($)</label><input type="number" name="amount" min="0.01" step="0.01" inputmode="decimal" value="'+(rest(pick)||"")+'"></div></div>'+
+    '<label class="f">Note</label><input type="text" name="note" maxlength="300">',
+    "Enregistrer le versement",async fd=>{const amount=Number(fv(fd,"amount").replace(",","."));if(!(amount>0))throw new Error("Montant invalide.");
+      await api("POST",API+"/finances/payouts",{username:fv(fd,"username"),month:r.month,kind:fv(fd,"kind"),day:fv(fd,"day"),amount,method:fv(fd,"method"),note:fv(fd,"note")});
+      toast("Versement enregistré.");render()});
+  const sel=$("#modal [name=username]");if(sel)sel.addEventListener("change",()=>{$("#modal [name=amount]").value=rest(sel.value)||""});
+}
+function finDebtModal(r){
+  const d=r.debt;
+  modal("Remboursement · dette "+d.label.toLowerCase(),
+    '<p class="small muted" style="margin:0">Solde restant : <b>'+fm(d.balance)+"</b></p>"+
+    '<div class="row"><div class="grow"><label class="f">Date</label><input type="date" name="day" max="'+today()+'" value="'+today()+'"></div>'+
+    '<div class="grow"><label class="f">Montant ($)</label><input type="number" name="amount" min="0.01" step="0.01" inputmode="decimal" value="'+Math.min(d.monthly,d.balance)+'"></div></div>'+
+    '<label class="f">Moyen</label><select name="method">'+finMethodOpts()+'</select><label class="f">Note</label><input type="text" name="note" maxlength="300">',
+    "Enregistrer",async fd=>{const amount=Number(fv(fd,"amount").replace(",","."));if(!(amount>0))throw new Error("Montant invalide.");
+      const res=await api("POST",API+"/finances/debt/payments",{day:fv(fd,"day"),amount,method:fv(fd,"method"),note:fv(fd,"note")});
+      toast("Remboursement enregistré. Solde : "+fm(res.balance)+".");render()});
+}
+function finIncomeModal(){
+  modal("Autre revenu",
+    '<div class="row"><div class="grow"><label class="f">Date</label><input type="date" name="day" max="'+today()+'" value="'+today()+'"></div>'+
+    '<div class="grow"><label class="f">Montant ($)</label><input type="number" name="amount" min="0.01" step="0.01" inputmode="decimal"></div></div>'+
+    '<label class="f">Libellé</label><input type="text" name="label" maxlength="80" required placeholder="Vente de cours"><label class="f">Note</label><input type="text" name="note" maxlength="300">'+
+    '<p class="small muted">Il s\'ajoute à la marge du mois de sa date.</p>',
+    "Enregistrer",async fd=>{const amount=Number(fv(fd,"amount").replace(",","."));if(!(amount>0))throw new Error("Montant invalide.");
+      await api("POST",API+"/finances/incomes",{day:fv(fd,"day"),label:fv(fd,"label"),amount,note:fv(fd,"note")});toast("Revenu enregistré.");render()});
+}
+function finSettingsModal(r){
+  const c=r.settings,team=S.members.filter(m=>!m.is_ai),pay=new Map(r.payroll.map(p=>[p.username,p.base]));
+  modal("Réglages des finances",
+    '<div class="row"><div class="grow"><label class="f">Début du suivi</label><input type="month" name="start_month" value="'+esc(c.start_month)+'"></div>'+
+    '<div class="grow"><label class="f">Accord de tous au-dessus de ($)</label><input type="number" name="approval_threshold" min="0" step="1" value="'+c.approval_threshold+'"></div></div>'+
+    '<div class="row"><div class="grow"><label class="f">Réserve (% de la marge)</label><input type="number" name="reserve_pct" min="0" max="99" step="0.5" value="'+c.reserve_pct+'"></div>'+
+    '<div class="grow"><label class="f">Part du surplus en primes (%)</label><input type="number" name="bonus_pct" min="0" max="100" step="1" value="'+c.bonus_pct+'"></div></div>'+
+    '<label class="f">Charges fixes : une ligne par poste, « libellé ; montant ; note »</label><textarea name="charges" style="min-height:110px;font-family:ui-monospace,Consolas,monospace">'+
+      esc(c.fixed_charges.map(x=>x.label+" ; "+x.amount+(x.note?" ; "+x.note:"")).join("\n"))+"</textarea>"+
+    '<label class="f">Personnes payées et salaire de base ($)</label><div class="fin-payroll">'+team.map(m=>'<div class="fin-pay-r"><label><input type="checkbox" name="paid_'+esc(m.username)+'"'+(pay.has(m.username)?" checked":"")+">"+av(m.username)+
+      "<span>"+esc(m.display_name)+(m.role==="observateur"?' <span class="faint small">observateur</span>':"")+'</span></label><input type="number" name="sal_'+esc(m.username)+'" min="0" step="1" value="'+(pay.has(m.username)?pay.get(m.username):c.default_salary)+'" aria-label="Salaire de '+esc(m.display_name)+'"></div>').join("")+"</div>"+
+    '<div class="row"><div class="grow"><label class="f">Dette envers</label><input type="text" name="debt_label" maxlength="60" value="'+esc(c.debt_label)+'"></div>'+
+    '<div class="grow"><label class="f">Solde initial ($)</label><input type="number" name="debt_initial" min="0" step="1" value="'+c.debt_initial+'"></div>'+
+    '<div class="grow"><label class="f">Par mois ($)</label><input type="number" name="debt_monthly" min="0" step="1" value="'+c.debt_monthly+'"></div></div>'+
+    '<p class="small muted">Ces réglages valent pour tous les mois : le relevé d\'un mois passé est recalculé avec eux.</p>',
+    "Enregistrer",async fd=>{
+      const charges=fv(fd,"charges").split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(/\s*;\s*/),amount=Number(String(p[1]==null?"":p[1]).replace(/\s/g,"").replace(",","."));
+        if(!p[0]||p[1]==null||p[1]===""||!(amount>=0))throw new Error("Charge illisible : « "+l+" » (attendu : Internet ; 120)");return {label:p[0],amount,note:p.slice(2).join(" ; ")}});
+      const salaries=team.filter(m=>fd.get("paid_"+m.username)).map(m=>({username:m.username,amount:Number(fv(fd,"sal_"+m.username))||0}));
+      await api("PUT",API+"/settings/finances",{start_month:fv(fd,"start_month"),fixed_charges:charges,default_salary:c.default_salary,salaries,
+        debt_label:fv(fd,"debt_label")||"Fournisseur",debt_initial:Number(fv(fd,"debt_initial")),debt_monthly:Number(fv(fd,"debt_monthly")),
+        reserve_pct:Number(fv(fd,"reserve_pct")),bonus_pct:Number(fv(fd,"bonus_pct")),approval_threshold:Number(fv(fd,"approval_threshold"))});
+      toast("Réglages enregistrés.");render()});
+}
+$("#view").addEventListener("click",e=>{const b=e.target.closest("[data-fin]");if(b)finAct(b)});
+$("#view").addEventListener("change",e=>{const el=e.target;if(el.dataset&&el.dataset.finMonth!==undefined&&/^\d{4}-(0[1-9]|1[0-2])$/.test(el.value))go("finances",el.value===today().slice(0,7)?undefined:el.value)});
+/* ==== FIN FINANCES ==== */
 
 /* ── fenêtres ───────────────────────────────────────────────── */
 let modalSubmit=null;
