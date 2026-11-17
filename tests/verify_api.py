@@ -176,8 +176,14 @@ r = mic.delete(f"/api/ws/sales/{r1.json()['vente']['id']}", headers=h(mic))
 check("un membre n'annule pas une vente HandyPay → 403", r.status_code == 403)
 r = ia.get("/api/workspace/ia/taches/HP-1", headers=auth)
 check("porte IA : tâche HP-1 lisible par sa clé", r.status_code == 200 and r.json()["tache"]["cle"] == "HP-1", r.text[:200])
-r = ia.post("/api/workspace/ia/fiches", json={"fiches": [{"nom": "Nouveau", "telephone": "3456 7810", "etape": "inscrit"}, {"nom": "Rose", "telephone": "50934567803", "etape": "carte utilisée"}]}, headers=auth)
-check("porte IA : fiches (1 ajoutée, 1 doublon dont l'étape avance)", r.status_code == 200 and r.json()["ajoutees"] == 1 and r.json()["doublons"] == 1 and r.json()["etapes_avancees"] == 1, r.text)
+# Fiche connue visée : une fiche de la file de michael. La répartition est tirée au hasard, mais aucune
+# de ses fiches n'a été touchée (mirv a traité et clos les siennes) : elle est encore à son étape
+# d'import, au plus « carte émise », donc « carte utilisée » la fait toujours avancer.
+known = mirv.get("/api/ws/followups", params={"view": "all", "assignee": "michael"}).json()["items"][0]
+r = ia.post("/api/workspace/ia/fiches", json={"fiches": [{"nom": "Nouveau", "telephone": "3456 7810", "etape": "inscrit"}, {"nom": known["name"], "telephone": known["phone"], "etape": "carte utilisée"}]}, headers=auth)
+after = mirv.get(f"/api/ws/followups/{known['id']}").json()["followup"]
+check("porte IA : fiches (1 ajoutée, 1 doublon dont l'étape avance)", r.status_code == 200 and r.json()["ajoutees"] == 1 and r.json()["doublons"] == 1 and r.json()["etapes_avancees"] == 1
+      and known["stage"] != "carte_utilisee" and after["stage"] == "carte_utilisee" and after["status"] == known["status"], r.text + " " + json.dumps(after)[:200])
 
 # ── Stats et objectif relié aux ventes ──────────────────────────────
 st = mirv.get("/api/ws/sales/stats").json()
