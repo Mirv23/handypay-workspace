@@ -238,3 +238,15 @@ automatiser plus tard, uniquement par l'API officielle de Meta :
 python -m py_compile app/*.py manage.py ia_cli.py
 uvicorn app.main:app      # puis http://127.0.0.1:8000/healthz → {"ok": true, "mode": "local"}
 ```
+
+Vérifications de bout en bout, sur une base locale jetable (`tests/verify_securite.py` en dernier : CSRF de chaque route,
+session, verrouillage, droits, injection CSV, fuites, compatibilité PostgREST, schéma SQL) :
+
+```bash
+python tests/run_verify.py --port 8804 --extra tests/verify_finances.py tests/verify_relances.py tests/verify_mobile.py tests/verify_securite.py
+```
+
+Le faux client local (`app/localdb.py`) refuse ce que PostgREST et PostgreSQL refuseraient (colonne inconnue, NULL dans une
+colonne `not null`, type invalide, décalage au-delà du total avec compte exact…) et plafonne une lecture à 1 000 lignes comme
+Supabase. Il n'imite pas tout (contraintes CHECK, longueurs, déclencheurs, droits) : un essai sur une vraie base Supabase reste
+nécessaire avant la mise en ligne.
