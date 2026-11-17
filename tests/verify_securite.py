@@ -452,7 +452,7 @@ def refused(fn):
     return False
 
 
-ldb = localdb.LocalClient(Path(tempfile.mkdtemp(prefix="hp-secu-")))
+ldb = localdb.LocalClient(Path(tempfile.mkdtemp(prefix="hp-secu-", dir=SCR)))  # effacé avec VERIFY_DIR
 S = "workspace_sales"
 check("faux client : colonne inconnue (select, filtre, order) refusée",
       refused(lambda: ldb.table(S).select("id,inconnue").execute()) and refused(lambda: ldb.table(S).select("*").eq("inconnue", 1).execute())
