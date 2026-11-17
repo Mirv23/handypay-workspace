@@ -28,6 +28,9 @@ PY = sys.executable
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--extra", nargs="*", default=[],
+                    help="scripts de vérification en plus (ex. tests/verify_finances.py), lancés après verify_api.py "
+                         "sur le même serveur, avec les mêmes variables (VERIFY_BASE, VERIFY_DIR…)")
     args = ap.parse_args()
 
     work = Path(tempfile.mkdtemp(prefix="hp-verify-"))
@@ -72,12 +75,15 @@ def main() -> int:
             except Exception:  # noqa: BLE001 - le serveur démarre
                 pass
             time.sleep(0.5)
-        res = subprocess.run([PY, str(ROOT / "tests" / "verify_api.py")], env=env, text=True, encoding="utf-8",
-                             capture_output=True)
-        print(res.stdout)
-        if res.stderr.strip():
-            print(res.stderr[-3000:])
-        return 0 if res.returncode == 0 and "FAIL" not in res.stdout else 1
+        ok = True
+        for script in ["tests/verify_api.py", *args.extra]:
+            print(f"=== {script}")
+            res = subprocess.run([PY, str(ROOT / script)], env=env, text=True, encoding="utf-8", capture_output=True)
+            print(res.stdout)
+            if res.stderr.strip():
+                print(res.stderr[-3000:])
+            ok = ok and res.returncode == 0 and "FAIL" not in res.stdout
+        return 0 if ok else 1
     finally:
         srv.terminate()
         try:
