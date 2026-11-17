@@ -1097,7 +1097,9 @@ $("#login-form").addEventListener("submit",async e=>{
   try{await api("POST","/api/auth/login",body);$("#lg-pass").value="";await boot()}
   catch(err){$("#lg-err").textContent=err.message}
 });
-async function logout(){try{await api("POST","/api/auth/logout")}catch(e){}stopPolling();S.tasks.clear();S.fo.items=[];S.tplMsg=null;showLogin()}
+async function logout(){try{await api("POST","/api/auth/logout")}catch(e){}stopPolling();S.tasks.clear();S.fo.items=[];S.tplMsg=null;showLogin();
+  /* Téléphone partagé : rien de la session précédente (vues, fiches, finances, membres) ne reste dans la page ni en mémoire. */
+  location.reload()}
 $("#logout-btn").onclick=logout;$("#blocked-out").onclick=logout;
 
 /* ── démarrage ──────────────────────────────────────────────── */

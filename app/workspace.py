@@ -1809,7 +1809,8 @@ def delete_doc(doc_id: str, request: Request):
     if current.get("author") != me.username and me.role != "responsable":
         raise HTTPException(status_code=403, detail="Seul son auteur ou un responsable supprime un document.")
     _run(client.table(T_DOCS).delete().eq("id", str(current["id"])), "suppression du document")
-    _log(client, me.username, "doc_deleted", detail={"title": current.get("title")})
+    # Avec son projet : le fil d'activité (lisible des observateurs) filtre les projets restreints.
+    _log(client, me.username, "doc_deleted", project_id=_id_or_none(current.get("project_id")), detail={"title": current.get("title")})
     return {"ok": True}
 
 
