@@ -137,12 +137,14 @@ SCHEMA: dict[str, dict] = {
     "workspace_message_templates": T({
         "id": UUID, "name": None, "stage": "", "body": None, "active": True, "position": 0,
         "created_by": "", "created_at": NOW, "updated_at": NOW,
+        "lang": "fr", "description": "",  # sql/relances_v2.sql
     }, touch=True),
     "workspace_followups": T({
         "id": UUID, "name": "", "phone": None, "stage": "inscrit", "status": "a_contacter",
         "assignee": None, "next_followup": None, "attempts": 0, "first_contact_at": None,
         "last_contact_at": None, "source": "", "notes": "", "sale_id": None, "created_by": "",
         "created_at": NOW, "updated_at": NOW,
+        "lang": "fr",  # sql/relances_v2.sql
     }, unique=[("phone",)], touch=True, fks=[("sale_id", "workspace_sales", "id", "set null")]),
     "workspace_followup_events": T({
         "id": UUID, "followup_id": None, "kind": None, "template_id": None, "template_name": "",

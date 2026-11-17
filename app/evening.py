@@ -5,6 +5,8 @@ Pour une date (Port-au-Prince) :
 - relances envoyées (messages et appels), réponses (en % des relances),
   closes après relance (en % des réponses) ;
 - le détail par personne ;
+- les conversations du jour face à l'objectif de chacun, et (ce soir) le
+  « reste à traiter » : fiches dues aujourd'hui ou avant, pas encore traitées ;
 - le formulaire du soir de chacun : les 3 blocages entendus, les bugs ouverts,
   une note, et les messages WhatsApp restés non lus (règle : zéro le soir).
 """
@@ -58,10 +60,14 @@ def followup_day_stats(client, iso: str) -> dict[str, dict]:
                          .in_("kind", list(followups.ATTEMPTS)).order("created_at").limit(1000), "lecture du journal des relances"):
             contacted.setdefault(str(e["followup_id"]), str(e.get("created_at") or ""))
     out: dict[str, dict] = {}
+    talked: dict[str, set[str]] = {}
     for e in events:
         who = str(e.get("actor") or "")
-        s = out.setdefault(who, {"sent": 0, "replies": 0, "closes": 0, "closes_after": 0})
+        s = out.setdefault(who, {"sent": 0, "replies": 0, "closes": 0, "closes_after": 0, "conversations": 0})
         kind = e.get("kind")
+        if kind in followups.CONVERSATION_KINDS:
+            talked.setdefault(who, set()).add(str(e.get("followup_id")))
+            s["conversations"] = len(talked[who])
         if kind in followups.ATTEMPTS:
             s["sent"] += 1
         elif kind == "reponse":
@@ -80,6 +86,9 @@ def evening_report(client, day: date) -> dict:
     stats = sales.compute_stats(client, day, team=team)
     fcfg = followups.get_followup_settings(client)
     per = followup_day_stats(client, iso)
+    # « Reste à traiter » n'a de sens que pour aujourd'hui : un jour passé, la file a bougé depuis.
+    live = followups.progress(client, day, team=team) if day == timeutil.today() else None
+    left = {p["username"]: p["to_treat"] for p in live["people"]} if live else {}
     notes = {str(r.get("username")): _note_out(r) for r in ws._run(
         client.table(T_NOTES).select("*").eq("day", iso).limit(500), "lecture des notes du soir")}
     cards = {p["username"]: p["cards"] for p in stats["today"]["by_person"] if p["username"]}
@@ -87,13 +96,16 @@ def evening_report(client, day: date) -> dict:
     for m in team:
         if m.get("is_ai"):
             continue
-        s = per.get(m["username"], {"sent": 0, "replies": 0, "closes": 0, "closes_after": 0})
-        if m["role"] == "observateur" and not any(s.values()) and not cards.get(m["username"]) and m["username"] not in notes:
+        s = per.get(m["username"], {"sent": 0, "replies": 0, "closes": 0, "closes_after": 0, "conversations": 0})
+        goal = fcfg["targets"].get(m["username"], 0)
+        if (m["role"] == "observateur" and not any(s.values()) and not cards.get(m["username"]) and m["username"] not in notes
+                and not left.get(m["username"])):
             continue
         people.append({
             "username": m["username"], "display_name": m["display_name"], "role": m["role"],
             "cards": cards.get(m["username"], 0), **s,
             "reply_rate": _pct(s["replies"], s["sent"]), "close_rate": _pct(s["closes_after"], s["replies"]),
+            "conversations_target": goal, "to_treat": left.get(m["username"], 0) if live else None,
             "note": notes.get(m["username"]),
         })
     people.sort(key=lambda p: (-p["cards"], -p["sent"], p["display_name"].casefold()))
@@ -115,6 +127,9 @@ def evening_report(client, day: date) -> dict:
             "sent": sent, "replies": replies, "closes": closes, "closes_after": closes_after,
             "reply_rate": _pct(replies, sent), "close_rate": _pct(closes_after, replies),
             "conversations_target": fcfg["conversations_target"],
+            "conversations": sum(s.get("conversations", 0) for s in per.values()),
+            "to_treat": live["team"]["to_treat"] if live else None,
+            "unassigned_due": live["team"]["unassigned"] if live else None,
         },
         "people": people,
         "unread_total": sum(n["unread_left"] or 0 for n in notes.values()),
