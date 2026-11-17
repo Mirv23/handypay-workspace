@@ -227,6 +227,10 @@ check("IP : derrière Render, uvicorn retient l'adresse écrite par le client, l
       s == {"uvicorn": "6.6.6.6", "app": "99.61.165.29"}, str(s))
 s = through_proxy([("X-Forwarded-For", "6.6.6.6, 99.61.165.29")])
 check("IP : un seul proxy, sans Cloudflare → dernière adresse de X-Forwarded-For", s["app"] == "99.61.165.29", str(s))
+check("IP : une adresse IPv6 compte pour son /64 (l'abonné en change à volonté), IPv4 telle quelle",
+      auth.ip_bucket("2001:db8:1:2::1") == auth.ip_bucket("2001:db8:1:2:ffff:ffff:ffff:ffff") == "2001:db8:1:2::/64"
+      and auth.ip_bucket("2001:db8:1:3::1") != auth.ip_bucket("2001:db8:1:2::1") and auth.ip_bucket("203.0.113.9") == "203.0.113.9"
+      and auth.ip_bucket("::ffff:203.0.113.9") == "203.0.113.9", auth.ip_bucket("2001:db8:1:2::1"))
 s = through_proxy([("X-Forwarded-For", "pas-une-ip")])
 check("IP : en-tête illisible → clé commune, jamais le texte du client", s["app"] == "?" and s["uvicorn"] == "pas-une-ip", str(s))
 

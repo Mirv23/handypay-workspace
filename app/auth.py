@@ -289,6 +289,20 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "?"
 
 
+def ip_bucket(ip: str) -> str:
+    """Clé de la limite par adresse : une adresse IPv4, ou le /64 d'une adresse IPv6
+    (un abonné change à volonté d'adresse dans son /64 : compter par adresse ne limiterait rien)."""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if addr.version == 4:
+        return str(addr)
+    if addr.ipv4_mapped:
+        return str(addr.ipv4_mapped)
+    return str(ipaddress.ip_network(f"{addr}/64", strict=False))
+
+
 def _record_failure(client, acc: dict) -> None:
     now = _utcnow()
     first = _parse(acc.get("first_failed_at"))
@@ -321,7 +335,7 @@ _BAD = "Identifiant ou mot de passe incorrect."
 @router.post("/api/auth/login")
 def login(body: LoginIn, request: Request, response: Response):
     client = db()
-    ip = "ip:" + client_ip(request)
+    ip = "ip:" + ip_bucket(client_ip(request))
     ident = body.identifier.strip()
     key = "id:" + (security.normalize_phone(ident) if security.looks_like_phone(ident) else ident.lower())
     if _mem_is_locked(ip) or _mem_is_locked(key):
