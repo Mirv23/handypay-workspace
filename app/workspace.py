@@ -1556,6 +1556,7 @@ def update_objective(objective_id: str, body: ObjectiveIn, request: Request):
 def delete_objective(objective_id: str, request: Request):
     client = _db()
     me = _me(request, client)
+    _require(me, "membre")  # un observateur n'écrit rien, même désigné responsable de l'objectif
     current = _objective_or_404(client, objective_id)
     if me.role != "responsable" and me.username not in (current.get("owner_username"), current.get("created_by")):
         raise HTTPException(status_code=403, detail="Seul son responsable ou un responsable de l'espace supprime un objectif.")
@@ -1805,6 +1806,7 @@ def update_doc(doc_id: str, body: DocIn, request: Request):
 def delete_doc(doc_id: str, request: Request):
     client = _db()
     me = _me(request, client)
+    _require(me, "membre")  # un auteur repassé observateur ne supprime plus rien
     current = _doc_or_404(client, me, doc_id)
     if current.get("author") != me.username and me.role != "responsable":
         raise HTTPException(status_code=403, detail="Seul son auteur ou un responsable supprime un document.")
