@@ -2,9 +2,21 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="robots" content="noindex, nofollow">
 <title>{{ app_name }}</title>
+<!-- ==== MOBILE : application installable ==== -->
+<meta name="theme-color" content="#FFFFFF" id="theme-color">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HandyPay">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<script>/* Thème choisi appliqué avant le premier rendu : pas d'éclair clair en mode sombre. */
+try{var t=localStorage.getItem("ws_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<!-- ==== FIN MOBILE ==== -->
 <style>
 :root{
   --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#F2F4F7; --border:#E4E7EC; --ink:#101828; --muted:#475467; --faint:#98A2B3;
@@ -502,6 +514,123 @@ a.btn{text-decoration:none}
 }
 @media (max-width:520px){.hide-sm{display:none!important}.board{grid-auto-columns:86vw}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ==== MOBILE ==== */
+/* Téléphone (≤ 768 px) : barre d'onglets en bas (Ventes, Relances, Soir, Tâches, Plus),
+   « Plus » ouvre le reste du menu dans un panneau ; bouton flottant « + Carte closée » ;
+   zones tactiles de 44 px ; encoches (safe-area) ; le clavier ne masque pas les champs. */
+#tabbar,#fab,#sheet-scrim,.cal-agenda{display:none}
+.cal-agenda{margin-top:12px}
+a.nav-i{text-decoration:none}
+#offline{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translateX(-50%);z-index:90;width:max-content;max-width:calc(100vw - 24px);
+  background:var(--ink);color:var(--bg);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;text-align:center;box-shadow:var(--shadow-lg)}
+#home-sales .ph{color:var(--faint)}
+@media (max-width:768px){
+  :root{--tabbar-h:58px}
+  #app{grid-template-rows:minmax(0,1fr) auto}
+  main{grid-row:1;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+  #top{min-height:calc(56px + env(safe-area-inset-top));padding:max(6px,env(safe-area-inset-top)) 10px 6px 12px;gap:6px}
+  #top h1{font-size:17px;flex:0 1 auto;min-width:0}
+  #menu-btn{display:none}
+  #app[data-v="ventes"] #top h1,#app[data-v="relances"] #top h1,#app[data-v="soir"] #top h1{display:block}
+  #app[data-v="ventes"] #search,#app[data-v="relances"] #search,#app[data-v="soir"] #search,
+  #app[data-v="ventes"] #new-task-btn,#app[data-v="relances"] #new-task-btn,#app[data-v="soir"] #new-task-btn{display:none}
+  #view{padding:12px 12px 24px}
+  #filters{padding:8px 12px}
+  #notifs{top:calc(60px + env(safe-area-inset-top))}
+
+  /* Barre d'onglets : dans la grille (jamais par-dessus le contenu), au-dessus de l'encoche du bas. */
+  #tabbar{display:grid;grid-row:2;grid-template-columns:repeat(5,minmax(0,1fr));position:relative;z-index:47;background:var(--surface);
+    border-top:1px solid var(--border);padding:0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .tab{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:var(--tabbar-h);
+    border:0;background:transparent;color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;padding:6px 2px 5px;-webkit-tap-highlight-color:transparent}
+  .tab .ic{width:52px;height:28px;border-radius:999px;display:grid;place-items:center;transition:background .15s,color .15s}
+  .tab .lb{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tab.on{color:var(--primary)}
+  .tab.on .ic{background:var(--primary-soft)}
+  .tab .badge{top:3px;right:calc(50% - 26px)}
+
+  /* « Plus » : la barre latérale devient un panneau qui monte du bas. */
+  #side{inset:auto 0 calc(var(--tabbar-h) + env(safe-area-inset-bottom)) 0;width:auto;max-height:calc(100dvh - var(--tabbar-h) - env(safe-area-inset-bottom) - 64px);
+    border:1px solid var(--border);border-bottom:0;border-radius:20px 20px 0 0;transform:translateY(calc(100% + var(--tabbar-h) + 48px));visibility:hidden;
+    transition:transform .24s cubic-bezier(.2,.8,.2,1),visibility .24s;z-index:46;box-shadow:0 -12px 40px rgba(0,0,0,.18);
+    padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+  #side.open{transform:none;visibility:visible;box-shadow:0 -12px 40px rgba(0,0,0,.22)}
+  #side::before{content:"";display:block;flex:none;width:40px;height:4px;border-radius:2px;background:var(--border);margin:8px auto 0}
+  #side .brand{padding:10px 18px 2px}
+  #side nav{padding:4px 10px 8px}
+  #nav .nav-i[data-go="ventes"],#nav .nav-i[data-go="relances"],#nav .nav-i[data-go="soir"],#nav .nav-i[data-go="board"]{display:none}
+  #sheet-scrim{display:block;position:fixed;inset:0;z-index:44;background:rgba(10,18,30,.42)}
+
+  /* Bouton flottant « + Carte closée » (vue Ventes, aujourd'hui). */
+  #fab{display:inline-flex;position:fixed;z-index:30;right:calc(16px + env(safe-area-inset-right));bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 14px);
+    align-items:center;gap:8px;min-height:56px;padding:0 22px 0 18px;border:0;border-radius:999px;background:var(--primary);color:var(--primary-ink);
+    font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px -8px rgba(11,111,164,.6),var(--shadow)}
+  #fab:active{transform:scale(.97)}
+  #fab:disabled{opacity:.7}
+  #app.has-fab #view{padding-bottom:96px}
+  #toast{bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px);width:calc(100vw - 24px)}
+  #app.has-fab~#toast{bottom:calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 84px)}
+
+  /* Zones tactiles d'au moins 44 px ; champs en 16 px (iOS ne zoome pas dessus). */
+  .btn,.btn.sm,.kpi,.add-in-col,.seg button,.tabs button,.nav-i,.nav-toggle{min-height:44px}
+  .btn.sm{padding:6px 12px}
+  .icon-btn{width:44px;height:44px}
+  #top .icon-btn,#top .btn{flex:none}
+  #top .btn{min-width:44px;justify-content:center}
+  .daynav .btn{min-width:44px;justify-content:center}
+  #filters label{min-height:44px}
+  .chk{position:relative}
+  .chk::before{content:"";position:absolute;inset:-13px}
+  /* Noms et numéros des fiches : zone tactile agrandie sans changer la mise en page. */
+  .fo-name,.fo-tel{padding-top:11px;padding-bottom:11px;margin-top:-11px;margin-bottom:-11px}
+  .fo-act select{min-height:44px}
+  .tcard .meta:first-child{flex-wrap:wrap}
+  .tcard .meta:first-child .pj{flex:1 1 auto}
+  input[type=checkbox]{width:20px;height:20px}
+  #grp{min-height:44px!important}
+
+  /* Lignes de tâches : le titre en entier (sur deux lignes au besoin), les pastilles dessous. */
+  .line[data-task]{flex-wrap:wrap;row-gap:4px}
+  .line[data-task]>.t{white-space:normal;flex:1 1 calc(100% - 64px)}
+  .line[data-task]>.t+*{margin-left:52px}
+  .who-row .t small{white-space:normal}
+
+  /* Calendrier : des repères de couleur dans la grille, la liste du mois en dessous. */
+  .cal-h{flex-wrap:wrap}
+  .cal-h h2{min-width:0;font-size:15px}
+  .cal-h .btn{min-width:44px;justify-content:center}
+  .cal .dow{padding:6px 4px;text-align:center}
+  .cal .day{min-height:58px;padding:4px 3px}
+  .cal .chip{font-size:0;height:6px;padding:0;border:0;border-radius:3px;background:var(--pc,#0B6FA4)}
+  .cal .day>.small{display:none}
+  .cal-agenda{display:block}
+
+  /* Tiroir d'une tâche : en-tête sur deux lignes, par-dessus la barre d'onglets. */
+  #drawer{z-index:48}
+  #drawer .dh{flex-wrap:wrap;row-gap:2px;padding:6px 10px}
+  #drawer .dh>.dot,#drawer .dh>select{order:-2}
+  #drawer .dh>select{flex:1 1 calc(100% - 84px);max-width:none!important;min-height:44px!important;font-size:16px}
+  #drawer .dh>[data-dclose]{order:-1}
+  #drawer .db{padding:12px 14px calc(40px + env(safe-area-inset-bottom))}
+  .props{grid-template-columns:104px minmax(0,1fr)}
+  body :where(input:not([type=checkbox],[type=radio],[type=range],[type=color]),select,textarea){font-size:16px}
+  input[type=text],input[type=email],input[type=password],input[type=search],input[type=date],input[type=number],input[type=url],input[type=tel],select{min-height:44px}
+  #filters select,.fo-filters select,.fo-filters input,.daynav input[type=date],.tbl td select,.tbl td input[type=date],.bulk select,.bulk input,
+  .props select,.props input{min-height:44px;font-size:16px}
+  .tabs{overflow-x:auto;scrollbar-width:none}
+  .tabs button{padding:10px 12px;white-space:nowrap}
+  #view:has(.board){scroll-snap-type:x proximity}
+  .board .col{scroll-snap-align:start}
+
+  /* Fenêtres : dans la partie visible de l'écran (au-dessus du clavier), collées en bas. */
+  #modal{inset:auto 0 auto 0;top:var(--vvt,0px);height:var(--vvh,100dvh);place-items:end center;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+  #modal .card{max-height:100%;padding:18px 16px;border-radius:20px}
+  #drawer{top:var(--vvt,0px);bottom:auto;height:var(--vvh,100dvh);padding-top:env(safe-area-inset-top)}
+  #palette{padding-top:calc(12px + env(safe-area-inset-top))}
+  html.kb-open #tabbar,html.kb-open #fab{display:none}
+}
+/* ==== FIN MOBILE ==== */
 </style>
 </head>
 <body>
@@ -526,6 +655,7 @@ a.btn{text-decoration:none}
   <div class="card" style="max-width:440px;padding:28px">
     <div class="brand"><span class="brand-mark">H</span> HandyPay <small>Espace d'équipe</small></div>
     <p id="blocked-msg"></p>
+    <button class="btn primary" id="blocked-retry" type="button">Réessayer</button>
     <button class="btn" id="blocked-out" type="button">Changer de compte</button>
   </div>
 </div>
@@ -553,11 +683,19 @@ a.btn{text-decoration:none}
       <button class="icon-btn" id="bell" type="button" aria-label="Notifications"><span class="badge" id="bell-n" hidden></span></button>
       <button class="btn primary" id="new-task-btn" type="button">+ <span class="hide-sm">Tâche</span></button>
     </header>
-    <div id="filters"></div>
+    <div id="filters" hidden></div>
     <section id="view" tabindex="-1"></section>
   </main>
+  <!-- ==== MOBILE : barre d'onglets et bouton flottant (≤ 768 px) ==== -->
+  <nav id="tabbar" aria-label="Navigation principale"></nav>
+  <button id="fab" type="button" data-sa="add" hidden></button>
+  <!-- ==== FIN MOBILE ==== -->
 </div>
 
+<!-- ==== MOBILE ==== -->
+<div id="sheet-scrim" hidden></div>
+<div id="offline" role="status" hidden>Pas de réseau : les chiffres reviendront avec la connexion.</div>
+<!-- ==== FIN MOBILE ==== -->
 <div id="scrim" class="scrim" hidden></div>
 <aside id="drawer" hidden aria-label="Détail de la tâche"></aside>
 <div id="modal" hidden role="dialog" aria-modal="true"></div>
@@ -787,6 +925,7 @@ $("#logout-btn").onclick=logout;$("#blocked-out").onclick=logout;
 /* ── démarrage ──────────────────────────────────────────────── */
 async function boot(){
   try{await api("GET","/api/auth/me")}catch(e){if(e.status!==401){showOnly("blocked");$("#blocked-msg").textContent=e.message}return}
+  if(location.hash==="#/compteur"){location.replace("/compteur");return} // retour de connexion vers le mode compteur
   let b;
   try{b=await api("GET",API+"/bootstrap")}
   catch(e){if(e.status===401)return;showOnly("blocked");$("#blocked-msg").textContent=e.message;return}
@@ -810,12 +949,16 @@ function applyBootstrap(b){
   if(f.cycle&&f.cycle!=="__current"&&!S.cycles.some(c=>c.id===f.cycle))f.cycle="";
 }
 async function refreshMeta(){try{applyBootstrap(await api("GET",API+"/bootstrap"));renderNav()}catch(e){fail(e)}}
-function startPolling(){stopPolling();
-  S.poll=setInterval(()=>{if(!document.hidden)sync()},30000);
-  S.notifPoll=setInterval(()=>{if(!document.hidden){loadUnread();refreshDue()}},60000);
-}
-function stopPolling(){clearInterval(S.poll);clearInterval(S.notifPoll)}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&S.me&&!$("#app").hidden)sync()});
+// Polling sobre : tâches toutes les 30 s et notifications toutes les 60 s quand la page
+// est visible ; 5 et 10 min quand elle est cachée ; rien hors ligne ; relance au retour.
+const POLL={sync:[30000,300000],notif:[60000,600000]};
+function startPolling(){stopPolling();S.polling=true;S.lastSync=Date.now();armPoll("sync");armPoll("notif")}
+function stopPolling(){S.polling=false;clearTimeout(S.poll);clearTimeout(S.notifPoll)}
+function armPoll(k){const slot=k==="sync"?"poll":"notifPoll";clearTimeout(S[slot]);if(!S.polling)return;
+  S[slot]=setTimeout(async()=>{if(navigator.onLine!==false){if(k==="sync"){S.lastSync=Date.now();await sync()}else{await loadUnread();await refreshDue()}}armPoll(k)},POLL[k][document.hidden?1:0])}
+document.addEventListener("visibilitychange",()=>{if(!S.polling)return;
+  if(!document.hidden&&S.me&&!$("#app").hidden&&Date.now()-(S.lastSync||0)>10000){S.lastSync=Date.now();sync()}
+  armPoll("sync");armPoll("notif")});
 async function sync(){
   if(!S.serverTime)return;
   const since=new Date(new Date(S.serverTime).getTime()-10000).toISOString();
@@ -833,6 +976,7 @@ function route(){
   if($("#app").hidden)return;
   const parts=location.hash.replace(/^#\/?/,"").split("/");
   let v=parts[0]||"home",p=parts[1]||null;
+  if(v==="compteur"){location.replace("/compteur");return}
   if(v==="t"){const n=Number(String(p).replace(/^[A-Za-z]+-/,""));const t=tasks().find(x=>x.number===n)||Array.from(S.tasks.values()).find(x=>x.number===n);
     if(t)openTask(t.id);else toast("Tâche "+(S.taskKey||"HP")+"-"+n+" introuvable.","err");v=S.view;p=S.param;history.replaceState(null,"","#/"+v+(p?"/"+p:""))}
   if(v==="project"&&!proj(p))v="home";
@@ -852,10 +996,12 @@ function renderNav(){
   act.forEach(p=>{const n=tasks().filter(t=>t.project_id===p.id&&open(t)).length;
     h+='<button class="nav-i'+(v==="project"&&S.param===p.id?" on":"")+'" data-go="project/'+esc(p.id)+'"><span class="ic"><span class="dot" style="background:'+esc(p.color)+'"></span></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((p.icon?p.icon+" ":"")+p.name)+"</span>"+(p.visibility==="restreint"?' <span title="Projet restreint">🔒</span>':"")+'<span class="n">'+(n||"")+"</span></button>"});
   if(!act.length)h+='<div class="small muted" style="padding:4px 10px">Aucun projet.</div>';
+  h+=navExtra();
   const more=S.moreNav||MORE_NAV.includes(v);
   h+='<button class="nav-h nav-toggle" data-more-nav aria-expanded="'+more+'">Plus <span>'+(more?"▾":"▸")+"</span></button>";
   if(more)MORE_NAV.forEach(k=>{if(k==="trash"&&!canEdit())return;const x=VIEWS.find(y=>y[0]===k);h+=navBtn(k,x[1],x[2],v===k)});
   $("#nav").innerHTML=h;
+  renderTabs();
 }
 $("#nav").addEventListener("click",e=>{
   if(e.target.closest("[data-more-nav]")){S.moreNav=!S.moreNav;store("ws_more",S.moreNav?"1":"0");return renderNav()}
@@ -912,14 +1058,15 @@ function vHome(){
   const grp=(label,list)=>list.length?'<div class="grp">'+esc(label)+"</div>"+list.slice(0,8).map(lineHTML).join(""):"";
   const body=grp("En retard",L)+grp("Aujourd'hui",T)+grp("Prochains jours",N);
   h+='<div class="grid2"><div class="card sec"><h2>Ma journée <a href="#/mine" class="small">Toutes mes tâches</a></h2>'+(body||'<div class="empty">Rien d\'urgent. Bonne journée !</div>')+"</div>";
-  h+='<div><div class="card sec home-camp" id="home-sales" hidden><h2>Campagne <a href="#/ventes" class="small">Ventes</a></h2><div id="home-sales-b"></div></div><div class="card sec"><h2>L\'équipe</h2>'+S.members.map(m=>{
+  h+='<div><div class="card sec home-camp" id="home-sales"><h2>Campagne <a href="#/ventes" class="small">Ventes</a></h2><div id="home-sales-b">'+homeSalesHTML(null)+'</div></div><div class="card sec"><h2>L\'équipe</h2>'+S.members.map(m=>{
       const mine=tasks().filter(x=>x.assignee===m.username),l=mine.filter(late).length,td=mine.filter(x=>open(x)&&x.due_date===t).length;
       const doing=mine.filter(x=>x.status==="en_cours"||x.status==="en_revue").sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)))[0];
       const sub=doing?esc(keyOf(doing)+" · "+doing.title):(m.is_ai?"En attente d'une tâche":"");
       return '<div class="line who-row" data-filter-member="'+esc(m.username)+'">'+av(m.username)+'<span class="t">'+esc(m.display_name)+(sub?"<small>"+sub+"</small>":"")+"</span>"+(td?'<span class="small muted">'+td+" auj.</span>":"")+(l?'<span class="pill danger">'+l+" en retard</span>":'<span class="pill ok">à jour</span>')+"</div>"}).join("")+"</div>";
-  h+='<div class="card sec" id="live" style="margin-top:16px" hidden><h2>En direct <span class="small faint">code et IA</span></h2><div id="live-b"></div></div>';
   const goals=S.objectives.filter(o=>o.status==="en_cours").slice(0,3);
   if(goals.length)h+='<div class="card sec" style="margin-top:16px"><h2>Objectifs <a href="#/goals" class="small">Voir</a></h2>'+goals.map(o=>'<div style="margin:8px 0"><div class="row"><span class="grow" style="font-weight:600">'+esc(o.title)+'</span><b>'+Math.round(o.progress*100)+' %</b></div><div class="bar"><i style="width:'+Math.round(o.progress*100)+'%"></i></div></div>').join("")+"</div>";
+  // « En direct » arrive après coup : en dernier, il ne pousse rien vers le bas.
+  h+='<div class="card sec" id="live" style="margin-top:16px" hidden><h2>En direct <span class="small faint">code et IA</span></h2><div id="live-b"></div></div>';
   h+="</div></div>";
   V().innerHTML=h;loadLive();loadHomeSales();
 }
@@ -1095,7 +1242,7 @@ function vCalendar(){
     h+='<div class="day'+(parseD(d).getMonth()!==first.getMonth()?" out":"")+(d===t?" today":"")+'" data-day="'+d+'"><span class="dn">'+parseD(d).getDate()+"</span>"+
       items.slice(0,4).map(x=>'<div class="chip'+(x.status==="fait"?" fait":"")+'" draggable="'+(canEdit()?"true":"false")+'" data-task="'+esc(x.id)+'" style="--pc:'+esc((proj(x.project_id)||{}).color||"#0B6FA4")+'" title="'+esc(x.title)+'">'+esc(x.title)+"</div>").join("")+
       (items.length>4?'<div class="small muted">+'+(items.length-4)+" autre(s)</div>":"")+"</div>"}
-  h+="</div>";
+  h+="</div>"+calAgenda(first,by);
   V().innerHTML=h;
   let dragId=null;
   $$(".chip[draggable=true]").forEach(c=>c.addEventListener("dragstart",e=>{dragId=c.dataset.task;e.dataTransfer.setData("text/plain",dragId)}));
@@ -1646,12 +1793,17 @@ function showPassword(r,title){
   const c=$("#modal [data-close]");if(c)c.textContent="Fermer";
 }
 async function loadHomeSales(){
-  let st;try{st=await api("GET",API+"/sales/stats")}catch(e){return}
+  let st;try{st=await api("GET",API+"/sales/stats")}catch(e){const el=$("#home-sales");if(el&&S.view==="home")el.hidden=true;return}
   const el=$("#home-sales");if(!el||S.view!=="home")return;
-  const t=st.today,c=st.campaign;el.hidden=false;
-  $("#home-sales-b").innerHTML='<div class="row"><span class="grow">Aujourd\'hui</span><b>'+intf(t.cards)+" / "+intf(t.target)+"</b></div>"+pbar(t.pct,t.cards>=t.target?"ok":"")+
-    '<div class="row" style="margin-top:10px"><span class="grow">Cumul</span><b>'+intf(c.cumul)+" / "+intf(c.target)+"</b></div>"+pbar(c.cumul/c.target)+
-    '<div class="small muted" style="margin-top:8px"><span style="color:'+(c.gap<0?"var(--danger)":"var(--ok)")+'">'+(c.gap>0?"+":"")+intf(c.gap)+"</span> face au rythme · "+
+  $("#home-sales-b").innerHTML=homeSalesHTML(st);
+}
+// Sans chiffres (st = null), la même carte avec des tirets : la place est prise d'emblée.
+function homeSalesHTML(st){
+  const ss=S.salesSettings||{},t=st?st.today:{cards:0,target:ss.daily_target||100,pct:0},c=st?st.campaign:{cumul:0,target:ss.total_target||3000,gap:0};
+  const n=v=>st?intf(v):'<span class="ph">–</span>';
+  return '<div class="row"><span class="grow">Aujourd\'hui</span><b>'+n(t.cards)+" / "+intf(t.target)+"</b></div>"+pbar(t.pct,t.cards>=t.target?"ok":"")+
+    '<div class="row" style="margin-top:10px"><span class="grow">Cumul</span><b>'+n(c.cumul)+" / "+intf(c.target)+"</b></div>"+pbar(c.cumul/c.target)+
+    '<div class="small muted" style="margin-top:8px">'+(st?'<span style="color:'+(c.gap<0?"var(--danger)":"var(--ok)")+'">'+(c.gap>0?"+":"")+intf(c.gap)+"</span>":n(0))+" face au rythme · "+
     (S.foDue?'<a href="#/relances">'+S.foDue+" relance"+(S.foDue>1?"s":"")+" dans ta file</a>":"ta file de relances est vide")+"</div>"+
     (canEdit()?'<div style="margin-top:10px"><a class="btn sm primary" href="#/ventes">+ Carte closée</a></div>':"");
 }
@@ -2148,6 +2300,83 @@ $("#bell").insertAdjacentHTML("afterbegin",ic("bell",18));
 applyTheme(store("ws_theme")||"auto");
 S.list.group=store("ws_group")||"status";
 S.moreNav=store("ws_more")==="1";
+
+/* ==== MOBILE ==== */
+/* Téléphone : barre d'onglets, panneau « Plus », bouton flottant « + Carte closée »,
+   clavier, hors ligne, couleur de la barre d'état, application installable. */
+ICONS.more='<circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/>';
+ICONS.counter='<rect x="3" y="3.5" width="18" height="13.5" rx="2.5"/><path d="M8.5 21h7M12 17v4M7 13l3.2-3.6 2.6 2.1L17 7"/>';
+const MQ_MOBILE=matchMedia("(max-width:768px)");
+function isMobile(){return MQ_MOBILE.matches}
+const TABS=[["ventes","Ventes","card"],["relances","Relances","wa"],["soir","Soir","dusk"],["board","Tâches","tasks"],["more","Plus","more"]];
+function tabOf(v){if(HP_VIEWS.has(v))return v;if(TASK_VIEWS.has(v)||v==="mine"||v==="project")return "board";return "more"}
+function navExtra(){return '<a class="nav-i" href="/compteur"><span class="ic">'+ic("counter",17)+"</span>Mode compteur</a>"}
+function sheetOpen(){return $("#side").classList.contains("open")&&isMobile()}
+$("#tabbar").innerHTML=TABS.map(([k,l,i])=>'<button type="button" class="tab" data-tab="'+k+'"'+(k==="more"?' aria-controls="side" aria-expanded="false"':"")+'><span class="ic">'+ic(i,22)+'</span><span class="lb">'+l+"</span>"+(k==="relances"?'<span class="badge" hidden></span>':"")+"</button>").join("");
+$("#fab").innerHTML=ic("plus",22)+"<span>Carte closée</span>";
+function renderTabs(){
+  if(!S.me)return;const open=sheetOpen(),cur=open?"more":tabOf(S.view);
+  $$("#tabbar .tab").forEach(b=>{const k=b.dataset.tab,on=k===cur;b.classList.toggle("on",on);
+    if(k==="more")b.setAttribute("aria-expanded",String(open));else if(on)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  const n=$("#tabbar .badge");n.hidden=!S.foDue;n.textContent=S.foDue>99?"99+":(S.foDue||"");
+  $("#app").dataset.v=S.view;$("#sheet-scrim").hidden=!open;updateFab();
+}
+function openSheet(){if(!S.moreNav){S.moreNav=true;renderNav()}$("#side").classList.add("open");renderTabs()}
+function closeSheet(){if(!$("#side").classList.contains("open"))return;$("#side").classList.remove("open");renderTabs()}
+$("#tabbar").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(!b)return;const k=b.dataset.tab;
+  if(k==="more")return sheetOpen()?closeSheet():openSheet();
+  closeSheet();
+  if(tabOf(S.view)===k)return V().scrollTo({top:0,behavior:"smooth"}); // onglet déjà ouvert : retour en haut
+  go(k)});
+$("#sheet-scrim").addEventListener("click",closeSheet);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&sheetOpen())closeSheet()});
+MQ_MOBILE.addEventListener("change",()=>{$("#side").classList.remove("open");renderTabs()});
+
+// Calendrier sur téléphone : la grille ne garde que des repères de couleur ; les échéances
+// du mois, titres en entier, sont listées dessous (masqué au-delà de 768 px).
+function calAgenda(first,by){const m=iso(first).slice(0,7),days=Object.keys(by).filter(d=>d.slice(0,7)===m).sort(),t=today();
+  return '<div class="card sec cal-agenda"><h2>Échéances du mois <span class="small muted">'+days.reduce((n,d)=>n+by[d].length,0)+"</span></h2>"+
+    (days.length?days.map(d=>'<div class="grp">'+esc(fmtDay(d))+(d===t?" · aujourd'hui":"")+"</div>"+by[d].map(lineHTML).join("")).join(""):'<div class="empty">Aucune échéance ce mois-ci.</div>')+"</div>"}
+
+// « + Carte closée » flottant : même action que le gros bouton de la vue (quantité comprise).
+function fabOn(){return isMobile()&&S.view==="ventes"&&canEdit()&&(!S.salesDay||S.salesDay===today())}
+function updateFab(){const f=$("#fab"),on=!!(S.me&&fabOn());f.hidden=!on;$("#app").classList.toggle("has-fab",on);if(!on)return;
+  const q=Math.max(1,Math.min(500,Math.round(Number(($("#qty")||{}).value)||1)));f.lastChild.textContent=q>1?q+" cartes closées":"Carte closée"}
+$("#fab").addEventListener("click",()=>salesAct($("#fab")));
+$("#view").addEventListener("click",e=>{if(e.target.closest('[data-sa="minus"],[data-sa="plus"]'))updateFab()});
+$("#view").addEventListener("input",e=>{if(e.target.id==="qty")updateFab()});
+new MutationObserver(()=>updateFab()).observe($("#view"),{childList:true});
+
+// Clavier : la zone visible (visualViewport) est suivie, le champ actif reste à l'écran,
+// la barre d'onglets et le bouton flottant s'effacent pendant la saisie.
+const VVP=window.visualViewport,NO_KB=/^(checkbox|radio|button|submit|reset|range|color|file|image|hidden|date|datetime-local|month|week|time)$/i;
+function typing(el){if(!el)return false;const t=(el.tagName||"").toLowerCase();return t==="textarea"||!!el.isContentEditable||(t==="input"&&!NO_KB.test(el.type||""))}
+function vvSync(){if(!VVP)return;const r=document.documentElement.style;r.setProperty("--vvh",Math.round(VVP.height)+"px");r.setProperty("--vvt",Math.round(VVP.offsetTop)+"px")}
+function keepVisible(){const el=document.activeElement;if(!typing(el)||!isMobile())return;
+  const r=el.getBoundingClientRect(),top=VVP?VVP.offsetTop:0,bottom=top+(VVP?VVP.height:innerHeight);
+  if(r.bottom>bottom-12||r.top<top+12)el.scrollIntoView({block:"center",behavior:"smooth"})}
+document.addEventListener("focusin",e=>{if(!typing(e.target)||!isMobile())return;document.documentElement.classList.add("kb-open");setTimeout(keepVisible,320)});
+document.addEventListener("focusout",()=>setTimeout(()=>{if(!typing(document.activeElement))document.documentElement.classList.remove("kb-open")},120));
+if(VVP){VVP.addEventListener("resize",()=>{vvSync();keepVisible()});VVP.addEventListener("scroll",vvSync);vvSync()}
+
+// Hors ligne : un bandeau clair ; au retour du réseau, tout se recharge.
+function netState(){$("#offline").hidden=navigator.onLine!==false}
+addEventListener("offline",netState);
+addEventListener("online",()=>{netState();
+  if(!$("#blocked").hidden)return boot();
+  if(S.me&&!$("#app").hidden){S.lastSync=Date.now();sync();loadUnread();refreshDue();if(HP_VIEWS.has(S.view)||S.view==="home")render()}});
+$("#blocked-retry").onclick=()=>boot();
+netState();
+
+// Couleur de la barre d'état du téléphone = celle de l'en-tête (clair ou sombre).
+function themeColorSync(){$("#theme-color").setAttribute("content",getComputedStyle(document.documentElement).getPropertyValue("--surface").trim()||"#FFFFFF")}
+new MutationObserver(themeColorSync).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",themeColorSync);
+themeColorSync();
+
+// Application installable : le service worker ne garde que la coquille (jamais /api/*).
+if("serviceWorker" in navigator&&window.isSecureContext)addEventListener("load",()=>{navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).catch(()=>{})});
+/* ==== FIN MOBILE ==== */
 
 boot();
 </script>
