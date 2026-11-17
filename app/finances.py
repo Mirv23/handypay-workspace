@@ -396,8 +396,10 @@ def _expense_out(r: dict, approvals: list[dict], me: Optional[ws.Me] = None) -> 
 def _approvals_for(client, ids: list[str]) -> list[dict]:
     out: list[dict] = []
     for i in range(0, len(ids), 150):
-        out += ws._run(client.table(T_APPROVALS).select("expense_id,username,created_at").in_("expense_id", ids[i:i + 150]).limit(5000),
-                       "lecture des accords")
+        chunk = ids[i:i + 150]
+        # Page par page : Supabase rend 1 000 lignes au plus par lecture.
+        out += fetch_all(lambda: client.table(T_APPROVALS).select("expense_id,username,created_at").in_("expense_id", chunk).order("id"),
+                         "lecture des accords")
     return out
 
 
