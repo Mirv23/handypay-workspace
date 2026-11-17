@@ -1,0 +1,27 @@
+# Render Blueprint : HandyPay · Espace d'équipe.
+# Aucune valeur secrète ici : les secrets sont générés par Render (generateValue)
+# ou saisis dans le tableau de bord (sync: false).
+services:
+  - type: web
+    name: handypay-workspace
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: WORKSPACE_IA_TOKEN
+        generateValue: true
+      - key: WORKSPACE_GITHUB_SECRET
+        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: WORKSPACE_PUBLIC_URL
+        sync: false

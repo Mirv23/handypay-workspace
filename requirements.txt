@@ -1,0 +1,11 @@
+# Versions fixées (installées et vérifiées le 17 novembre 2026, Python 3.12).
+fastapi==0.163.1
+starlette==1.10.0
+pydantic==2.14.3
+uvicorn[standard]==0.54.0
+Jinja2==3.1.6
+httpx==0.28.1
+supabase==2.34.1
+postgrest==2.34.1
+# Fuseau America/Port-au-Prince sous Windows (et dans les images minimales).
+tzdata==2026.6
