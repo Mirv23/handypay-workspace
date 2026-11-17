@@ -68,10 +68,14 @@ APP_NAME = "HandyPay · Espace d'équipe"
 # Rien d'extérieur, aucun cadre. Les liens wa.me sont des navigations (nouvel
 # onglet), pas des requêtes de la page : la CSP ne les gêne pas. Application
 # installable : le manifeste et le service worker viennent du même site (mobile.py).
+# Scripts : pas de 'unsafe-inline'. Seuls les <script> de la page, marqués du
+# nonce tiré pour CETTE réponse, s'exécutent : un script ou un attribut
+# `onerror=` injecté dans la page serait bloqué par le navigateur. Les styles
+# gardent 'unsafe-inline' (attributs style= partout dans la page).
 WORKSPACE_CSP = (
     "default-src 'self'; "
     "style-src 'self' 'unsafe-inline'; "
-    "script-src 'self' 'unsafe-inline'; "
+    "script-src 'self'{nonce}; "
     "img-src 'self' data:; "
     "connect-src 'self'; "
     "manifest-src 'self'; "
@@ -80,6 +84,18 @@ WORKSPACE_CSP = (
     "form-action 'self'; "
     "frame-ancestors 'none'"
 )
+
+
+def page_csp(nonce: str = "") -> str:
+    """CSP d'une page HTML (« / », « /compteur ») ; sans nonce, aucun script en ligne ne s'exécute."""
+    return WORKSPACE_CSP.replace("{nonce}", f" 'nonce-{nonce}'" if nonce else "")
+
+
+def page_nonce(request: Request) -> str:
+    """Nonce CSP de cette réponse : le gardien (main.py) le relit pour écrire l'en-tête."""
+    nonce = security.new_nonce()
+    request.state.csp_nonce = nonce
+    return nonce
 
 T_ACCOUNTS = auth.T_ACCOUNTS
 T_MEMBERS = "workspace_members"
@@ -720,7 +736,7 @@ def _spawn_next(client, task: dict, actor: str) -> Optional[dict]:
 @router.get(PAGE_PATH, include_in_schema=False)
 def workspace_page(request: Request):
     """Coquille HTML : aucune donnée, tout passe ensuite par l'API et la session."""
-    response = _templates.TemplateResponse(request, "index.html", {"app_name": APP_NAME})
+    response = _templates.TemplateResponse(request, "index.html", {"app_name": APP_NAME, "csp_nonce": page_nonce(request)})
     if not request.cookies.get(security.CSRF_COOKIE):
         auth.set_csrf_cookie(response)
     return response

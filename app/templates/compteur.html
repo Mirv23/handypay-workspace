@@ -11,7 +11,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>Compteur · HandyPay</title>
-<script>try{var t=localStorage.getItem("ws_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script nonce="{{ csp_nonce }}">try{var t=localStorage.getItem("ws_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <style>
 /* Mode compteur : la page que l'on filme chaque matin (vidéo verticale 9:16).
    Contraste fort, chiffres très grands, lisibles de loin ; aucun nom, aucun numéro. */
@@ -170,7 +170,7 @@ svg.i{flex:none;display:block}
 <p class="sr" id="c-live" aria-live="polite"></p>
 
 <script id="c-init" type="application/json">{{ initial|tojson }}</script>
-<script>
+<script nonce="{{ csp_nonce }}">
 "use strict";
 /* Compteur : GET /api/ws/compteur (session, lecture seule, aucune donnée personnelle). */
 const $ = (id) => document.getElementById(id);

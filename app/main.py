@@ -47,9 +47,11 @@ _HEADERS = {
     "Cross-Origin-Opener-Policy": "same-origin",
 }
 _API_CSP = "default-src 'none'; frame-ancestors 'none'"
-# Les pages HTML ont la CSP de la page ; le service worker, la sienne (il relit
-# la coquille sur la même origine) ; tout le reste (API, manifeste, icônes) : rien.
-_CSP_BY_PATH = {ws.PAGE_PATH: ws.WORKSPACE_CSP, mobile.COUNTER_PATH: ws.WORKSPACE_CSP, mobile.SW_PATH: mobile.SW_CSP}
+# Les pages HTML ont la CSP de la page, avec le nonce de leurs scripts ; le
+# service worker, la sienne (il relit la coquille sur la même origine) ; tout
+# le reste (API, manifeste, icônes) : rien.
+_PAGE_PATHS = (ws.PAGE_PATH, mobile.COUNTER_PATH)
+_CSP_BY_PATH = {mobile.SW_PATH: mobile.SW_CSP}
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -129,10 +131,13 @@ def _deny(status: int, detail: str) -> JSONResponse:
     return JSONResponse(status_code=status, content={"detail": detail})
 
 
-def _secure(response, path: str):
+def _secure(response, path: str, nonce: str = ""):
     for key, value in _HEADERS.items():
         response.headers.setdefault(key, value)
-    response.headers["Content-Security-Policy"] = _CSP_BY_PATH.get(path, _API_CSP)
+    if path in _PAGE_PATHS:
+        response.headers["Content-Security-Policy"] = ws.page_csp(nonce)
+    else:
+        response.headers["Content-Security-Policy"] = _CSP_BY_PATH.get(path, _API_CSP)
     if get_settings().cookie_secure:
         response.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
     return response
@@ -158,7 +163,9 @@ async def guard(request: Request, call_next):
             if user is not None and method not in SAFE_METHODS and not security.same_token(header, user["csrf"]):
                 return _secure(_deny(403, "Jeton CSRF invalide pour cette session : recharge la page."), path)
             request.state.user = user
-    return _secure(await call_next(request), path)
+    response = await call_next(request)
+    # Nonce tiré par la page (workspace.page_nonce) pour ses propres <script>.
+    return _secure(response, path, str(getattr(request.state, "csp_nonce", "") or ""))
 
 
 @app.get("/healthz", include_in_schema=False)
