@@ -12,6 +12,9 @@ Application autonome tirée du module « espace d'équipe » de JaKOB : FastAPI 
 |---|---|
 | **Ventes** | Gros bouton « + Carte closée » (avec quantité) ; classement du jour et de la semaine par personne ; progression du jour (x / 100) et du cumul face au jalon ; écart au rythme ; marge ; graphique des ventes par jour ; saisies du jour (un membre annule sa propre saisie du jour, un responsable corrige et annule tout). |
 | **Relances** | Fiches clients à relancer. « Ma file du jour » (assignées à moi, à contacter ou relance due), filtres par étape, statut, personne, recherche. Sur chaque fiche : **Ouvrir WhatsApp** (lien `wa.me` avec le message rempli, tentative notée, prochaine relance programmée), **A répondu**, **Closé** (crée la vente à ton nom), **Perdu**, note ou appel. Import CSV avec rapport, répartition équitable, modèles de message, export CSV (responsables). |
+| **Relances à grand volume** | **Mode rafale** (une fiche à la fois, message modifiable, touches W / R / C / N / P), **ajout par collage** d'une liste de clients (aperçu, doublons, répartition), **actions groupées**, « Copier le message », modèles en **français et en créole**, objectif de conversations par personne et compteur « reste à traiter ». Détails : `docs/relances.md`. |
+| **Finances** | La cascade du mois : charges fixes → salaires de base → dette fournisseur → réserve → primes et croissance. Seuil en cartes, projection, ce qui revient à chacun, dépenses (accord des personnes payées au-dessus de 200 $), versements, dette. Lecture pour toute l'équipe, saisie par les responsables. Détails : `docs/finances.md`. |
+| **Téléphone** | Application installable (PWA), barre d'onglets en bas, bouton « + Carte closée » flottant, **mode compteur** plein écran pour filmer (`/compteur`, aucun nom ni numéro). Détails : `docs/mobile.md`. |
 | **Tableau du soir** | Pour une date : cartes du jour et cumul, écart au rythme des jalons, marge, relances envoyées (/ 300), réponses en % des relances, closes après relance en % des réponses, détail par personne ; le formulaire du soir de chacun (3 blocages entendus, bugs ouverts, note, messages non lus). |
 | Aujourd'hui, Tâches (tableau, liste, calendrier, chronologie), Objectifs, Cycles, Équipe, Documents, Rapports, Corbeille | Les fonctions d'origine : projets, tâches (clé `HP-12`), objectifs et résultats clés (un résultat clé peut suivre les ventes tout seul), cycles, charge de l'équipe, documents, rapports, corbeille, modèles de projet (dont « Campagne 3 000 cartes »), notifications, activité, export CSV. |
 | Automatisations | E-mail du matin (ventes d'hier, file de relances, tâches), webhook GitHub, membre « IA » et sa porte à jeton (tâches **et ventes venues de HandyPay**). |
@@ -51,12 +54,20 @@ app/
   connect.py       webhook GitHub, porte de l'IA (tâches, ventes, fiches)
   digest.py        e-mail du matin et son planificateur
   email_sender.py  envoi Resend ou SMTP
+  finances.py      relevé du mois (cascade), dépenses, versements, dette
+  mobile.py        manifest, service worker, icônes, mode compteur
   timeutil.py      fuseau America/Port-au-Prince
-  templates/index.html   la page
-sql/schema.sql     schéma complet pour une base Supabase neuve (RLS forcée)
+  templates/index.html   la page ; templates/compteur.html   le mode compteur
+  static/          manifest.webmanifest, sw.js, icons/
+sql/schema.sql         schéma de base (RLS forcée) — à exécuter en premier
+sql/relances_v2.sql    relances à grand volume — ensuite
+sql/finances.sql       finances — en dernier
+docs/              relances.md, finances.md, mobile.md
+tests/             run_verify.py et les vérifications de bout en bout
+tools/make_icons.py    génère les icônes
 manage.py          create-owner, reset-password, seed
 ia_cli.py          outil en ligne de commande de l'agent IA
-Dockerfile, requirements.txt, .env.example
+Dockerfile, render.yaml, requirements.txt, .env.example
 ```
 
 ## Lancer en local (sans base)
@@ -86,14 +97,16 @@ uvicorn app.main:app --reload
 
 Ouvre http://127.0.0.1:8000 et connecte-toi avec `mirv` (ou le numéro) et le mot de passe affiché **une seule fois**
 par `create-owner`. Si la base est vide, `create-owner` crée aussi l'objectif « 3 000 cartes » (deux résultats clés reliés
-aux ventes) et les 5 modèles de message de départ. Mot de passe perdu : `python manage.py reset-password --username mirv`.
+aux ventes) et les modèles de message de départ (français et créole). Mot de passe perdu : `python manage.py reset-password --username mirv`.
 
 ## Créer la base Supabase
 
 1. Crée un projet sur https://supabase.com (région la plus proche d'Haïti : `us-east`).
-2. **SQL Editor → New query**, colle tout `sql/schema.sql`, **Run**. Le script est ré-exécutable.
-   Il crée 22 tables `workspace_*`, active **et force** la RLS sur chacune, sans aucune policy, et retire tout droit aux
-   rôles `anon` et `authenticated` : seule la clé service du serveur lit et écrit.
+2. **SQL Editor → New query** : exécute, **dans cet ordre**, `sql/schema.sql`, puis `sql/relances_v2.sql`, puis
+   `sql/finances.sql` (chacun : coller, **Run**). Les scripts sont ré-exécutables.
+   Ils créent les tables `workspace_*`, activent **et forcent** la RLS sur chacune, sans aucune policy, et retirent tout
+   droit aux rôles `anon` et `authenticated` : seule la clé service du serveur lit et écrit. Sans `relances_v2.sql`, les
+   fiches répondent 503 ; sans `finances.sql`, la vue Finances aussi.
 3. **Project Settings → API** : copie l'URL du projet (`SUPABASE_URL`) et la clé **service_role** / secrète
    (`SUPABASE_SERVICE_KEY`). Elle ne quitte jamais le serveur ; n'utilise jamais la clé `anon` ici.
 4. Lance `python manage.py create-owner …` avec ces deux variables définies : le compte est créé dans Supabase.
@@ -128,7 +141,8 @@ Aucune clé n'est écrite dans le code. Tout passe par l'environnement (voir `.e
 
 Un `Dockerfile` est fourni (Python 3.12, utilisateur sans privilèges, uvicorn derrière le proxy de l'hébergeur).
 
-**Render** : New → Web Service → ton dépôt → Runtime *Docker*. Ajoute les variables (au minimum `SUPABASE_URL`,
+**Render** : le fichier `render.yaml` décrit le service (Docker, région Virginie, `/healthz`, secrets générés par Render).
+Sinon, à la main : New → Web Service → ton dépôt → Runtime *Docker*. Ajoute les variables (au minimum `SUPABASE_URL`,
 `SUPABASE_SERVICE_KEY`, `SESSION_SECRET`, `WORKSPACE_PUBLIC_URL`), *Health Check Path* `/healthz`. Une instance payante
 reste éveillée ; une instance gratuite s'endort : l'e-mail du matin part alors au réveil, une seule fois dans la journée.
 
@@ -197,7 +211,7 @@ téléphone de l'équipe. L'espace note « message envoyé » (avec le modèle),
 relance : par défaut **J+1** après la 1re tentative, **J+3** après la 2e, **J+7** après la 3e, comptés depuis la tentative.
 Après **3 tentatives sans réponse**, la fiche passe en **« froid »** : elle revient une dernière fois à J+7, puis c'est à la
 personne de décider (perdu, pas intéressé…). « A répondu » remet le compteur à zéro. Séquence, seuil et objectif de
-conversations (300 par jour) se règlent dans Relances → Séquence (responsables).
+conversations par personne se règlent dans Relances → Réglages (responsables).
 
 Modèles : variables `{prenom}`, `{nom}` (ce qui suit le prénom) et `{moi}` (le prénom de la personne qui envoie). Le modèle de
 l'étape de la fiche est proposé en premier.
@@ -231,7 +245,10 @@ automatiser plus tard, uniquement par l'API officielle de Meta :
 
 ## Vérifier
 
-```bash
-python -m py_compile app/*.py manage.py ia_cli.py
-uvicorn app.main:app      # puis http://127.0.0.1:8000/healthz → {"ok": true, "mode": "local"}
+Toutes les vérifications de bout en bout, sur une base locale jetable (le `.env` n'est pas utilisé, rien n'est écrit dans
+le projet, le serveur s'arrête à la fin) :
+
+```powershell
+$env:PYTHONIOENCODING="utf-8"
+.\.venv\Scripts\python.exe tests\run_verify.py --extra tests\verify_finances.py tests\verify_relances.py tests\verify_mobile.py
 ```
