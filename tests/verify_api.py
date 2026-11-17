@@ -120,7 +120,7 @@ check("répartition équitable : 2 fiches chacun", r.status_code == 200 and r.js
 q = mirv.get("/api/ws/followups", params={"view": "mine"}).json()
 check("« Ma file du jour » de mirv : 2 fiches, assignées à lui", q["total"] == 2 and all(i["assignee"] == "mirv" for i in q["items"]) and q["mine_due"] == 2, json.dumps(q)[:300])
 tpls = mirv.get("/api/ws/message-templates").json()["templates"]
-check("5 modèles de départ", len(tpls) == 5, str(len(tpls)))
+check("5 modèles de départ en français (les 5 créoles : verify_relances.py)", len([t for t in tpls if t.get("lang", "fr") == "fr"]) == 5, str(len(tpls)))
 fo1, fo2 = q["items"][0], q["items"][1]
 tpl1 = next((t for t in tpls if t["stage"] == fo1["stage"]), next(t for t in tpls if t["stage"] == ""))
 

@@ -345,7 +345,7 @@ def _extras(client, team: list[dict], today: date) -> dict:
     rows = ws._run(
         client.table(followups.T_FOLLOWUPS).select("assignee,status,next_followup")
         .not_.is_("assignee", "null").not_.in_("status", list(followups.CLOSED))
-        .or_(f"status.eq.a_contacter,next_followup.lte.{iso}").limit(1000),
+        .or_(followups.due_filter(iso)).limit(1000),
         "lecture des relances",
     )
     queue: dict[str, tuple[int, int]] = {}
