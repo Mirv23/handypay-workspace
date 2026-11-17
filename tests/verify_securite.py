@@ -252,6 +252,17 @@ check("blocage : 16 essais lancés en même temps → le compte est bloqué ensu
 r = mirv.post(f"/api/ws/members/{SEC_R}/password", headers=h(mirv))
 check("blocage : un nouveau mot de passe donné par un responsable le lève (200)",
       r.status_code == 200 and login(client(), SEC_R, r.json()["password"], ip="203.0.113.60").status_code == 200, r.text[:200])
+SEC_Q = f"secq{TAG}"
+pw_q = member(mirv, SEC_Q)
+qc = client()
+codes = [login(qc, SEC_Q, "faux", ip="203.0.113.61").status_code for _ in range(8)]
+locked_q = login(qc, SEC_Q, pw_q, ip="203.0.113.61").status_code
+cli = subprocess.run([sys.executable, "manage.py", "reset-password", "--username", SEC_Q], cwd=ROOT, env=os.environ.copy(),
+                     capture_output=True, text=True, encoding="utf-8")
+new_q = re.search(r"Nouveau mot de passe pour \S+ : (\S+)", cli.stdout)
+check("blocage : « manage.py reset-password » (autre processus) le lève aussi",
+      codes == [401] * 8 and locked_q == 429 and new_q and login(client(), SEC_Q, new_q.group(1), ip="203.0.113.61").status_code == 200,
+      f"{codes} {locked_q} {cli.stdout[-200:]} {cli.stderr[-200:]}")
 
 # ═══ 5. Droits ═══════════════════════════════════════════════════════════
 # Finances : observateur exclu, membre en lecture (proposer seulement).

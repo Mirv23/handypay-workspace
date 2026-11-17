@@ -18,7 +18,9 @@ exactement les mêmes réponses : on ne devine pas qui a un compte). Un compte
 existant est AUSSI compté en mémoire, sous son nom d'utilisateur : le compteur
 en base est lu puis réécrit, et des essais lancés en parallèle se marchaient
 dessus (le blocage n'arrivait jamais) ; le compteur en mémoire, lui, est
-atomique, et il est le même que l'on tape le nom ou le numéro.
+atomique, et il est le même que l'on tape le nom ou le numéro. Il suit aussi la
+version de session : un nouveau mot de passe (même donné par `manage.py`, dans
+un autre processus) repart d'un compteur neuf, comme le compteur en base.
 Limite par adresse IP (60 échecs) : l'adresse vient de `client_ip`, que le
 client ne peut pas choisir en envoyant son propre X-Forwarded-For.
 """
@@ -156,7 +158,6 @@ def reset_password(client, username: str) -> str:
         "session_version": int(acc.get("session_version") or 1) + 1,
         "failed_logins": 0, "first_failed_at": None, "locked_until": None,
     }).eq("username", username), "nouveau mot de passe")
-    _mem_clear(_account_key(username), with_lock=True)
     return password
 
 
@@ -239,15 +240,15 @@ def _mem_is_locked(key: str) -> bool:
         return bool(until)
 
 
-def _mem_clear(key: str, with_lock: bool = False) -> None:
+def _mem_clear(key: str) -> None:
     with _mem_lock:
         _mem_failures.pop(key, None)
-        if with_lock:
-            _mem_locked.pop(key, None)
 
 
-def _account_key(username: str) -> str:
-    return "acct:" + username
+def _account_key(acc: dict) -> str:
+    """Compteur en mémoire d'un compte : par nom ET version de session. Un nouveau mot de passe
+    (page ou `manage.py reset-password`, autre processus) change la version, donc le compteur."""
+    return f"acct:{acc['username']}:{int(acc.get('session_version') or 1)}"
 
 
 def _valid_ip(raw: str) -> str:
@@ -328,21 +329,21 @@ def login(body: LoginIn, request: Request, response: Response):
     acc = find_account(client, ident, with_hash=True)
     if acc is not None:
         locked = _parse(acc.get("locked_until"))
-        if (locked and locked > _utcnow()) or _mem_is_locked(_account_key(acc["username"])):
+        if (locked and locked > _utcnow()) or _mem_is_locked(_account_key(acc)):
             raise HTTPException(status_code=429, detail=_LOCKED)
     ok = security.verify_password(body.password, (acc or {}).get("password_hash") or "")
     if not ok or acc is None or acc.get("active") is False:
         _mem_failed(ip)
         if acc is not None:
             # Compteur atomique (essais en parallèle), puis le compteur en base (redémarrage).
-            _mem_failed(_account_key(acc["username"]))
+            _mem_failed(_account_key(acc))
             _record_failure(client, acc)
         else:
             # Même rythme qu'un compte réel : 401 jusqu'au 8e échec, 429 ensuite.
             _mem_failed(key)
         logger.info("Connexion refusée")
         raise HTTPException(status_code=401, detail=_BAD)
-    _mem_clear(_account_key(acc["username"]))
+    _mem_clear(_account_key(acc))
     run(client.table(T_ACCOUNTS).update({
         "failed_logins": 0, "first_failed_at": None, "locked_until": None, "last_login_at": _iso(_utcnow()),
     }).eq("username", acc["username"]), "connexion")
